@@ -10,7 +10,7 @@ public static class NameSearch
         if(string.IsNullOrWhiteSpace(name))
             return ArraySegment<PartialAnagram>.Empty;
 
-        if (name.Contains(" "))
+        if (name.Contains(" ") || name.Length >= 15)
         {
             return FindAnagrams(name, NounLookup.Value, AdjectiveLookup.Value);
         }
@@ -27,9 +27,9 @@ public static class NameSearch
     }
 
 
-    public static IEnumerable<string> GetAllFirstNames => Wordlist.Names.Split("\r\n");
-    public static IEnumerable<string> GetAllNouns => Wordlist.Nouns.Split("\r\n");
-    public static IEnumerable<string> GetAllAdjectives => Wordlist.Adjectives.Split("\r\n");
+    public static IEnumerable<string> GetAllFirstNames => Wordlist.Names.Split('\n');
+    public static IEnumerable<string> GetAllNouns => Wordlist.Nouns.Split('\n');
+    public static IEnumerable<string> GetAllAdjectives => Wordlist.Adjectives.Split('\n');
 
     public static readonly Lazy<ILookup<AnagramKey, string>> FirstNameLookup = new(() => GetAllFirstNames.ToLookup(AnagramKey.Create));
     public static readonly Lazy<ILookup<AnagramKey, string>> NounLookup = new(() => GetAllNouns.ToLookup(AnagramKey.Create));
@@ -108,7 +108,7 @@ public readonly record struct AnagramKey(string Text)
     /// Create from a piece of text
     /// </summary>
     public static AnagramKey Create(string s)
-        => new(new string(s.ToLowerInvariant().OrderBy(x => x).ToArray()));
+        => new(new string(s.Trim().ToLowerInvariant().OrderBy(x => x).ToArray()));
     
     /// <summary>
     /// Create from a piece of text that might contain special characters
