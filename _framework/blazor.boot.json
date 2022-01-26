@@ -8,7 +8,7 @@
   "resources": {
     "assembly": {
       "ContinuousPrimate.Blazor.dll": "sha256-bM+vVThpLsEZZ3SV32erGyEjI5miJsd9omQg1RGhHV0=",
-      "ContinuousPrimate.dll": "sha256-QjVPeU+pM2l5Ni9+lVgMKG0ixlzMJ\/exx5iQbpROYLc=",
+      "ContinuousPrimate.dll": "sha256-sPZOOgdtvDW2myf+A1jsT+enp8j0yxYrFKXJC18KwVo=",
       "Microsoft.AspNetCore.Components.dll": "sha256-6oSM4CKAOLsiL97OfnxEBcrgj80DLIluTL1XkAYTiK8=",
       "Microsoft.AspNetCore.Components.Forms.dll": "sha256-jl5A7Pv+VfrShD3mNcK1EVIQ1luoqe6N9FmQKx226kc=",
       "Microsoft.AspNetCore.Components.Web.dll": "sha256-nfJzcMQ6Ih46u6YArWnsPQ1rB\/KxPB7Z9xJdknc92qQ=",
@@ -60,7 +60,7 @@
     "pdb": null,
     "runtime": {
       "dotnet.6.0.1.b3vk8kr1sd.js": "sha256-30rAIBqGsq5bVgAmUQK+BxOMNN2IDAc58fYvI1cMAb4=",
-      "dotnet.wasm": "sha256-mQFRuNEZ1YqaAgaXqNrX1ne9pLDw4SJt6FBXo0cRpaA="
+      "dotnet.wasm": "sha256-eLyv5+oCbCCi2j9pSIpG5BFXQnOMpqXEa24HHdpfZ68="
     },
     "satelliteResources": null
   }
