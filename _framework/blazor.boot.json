@@ -7,8 +7,8 @@
   "linkerEnabled": true,
   "resources": {
     "assembly": {
-      "ContinuousPrimate.Blazor.dll": "sha256-87xhw8ommvGQvU1FOFNhB1JFpISdwR4TjSjyGDibpI0=",
-      "ContinuousPrimate.dll": "sha256-M814NXYllYXr2JKxuIB+4b3ImX92O7hKLW+otJOqSZo=",
+      "ContinuousPrimate.Blazor.dll": "sha256-bM+vVThpLsEZZ3SV32erGyEjI5miJsd9omQg1RGhHV0=",
+      "ContinuousPrimate.dll": "sha256-QjVPeU+pM2l5Ni9+lVgMKG0ixlzMJ\/exx5iQbpROYLc=",
       "Microsoft.AspNetCore.Components.dll": "sha256-6oSM4CKAOLsiL97OfnxEBcrgj80DLIluTL1XkAYTiK8=",
       "Microsoft.AspNetCore.Components.Forms.dll": "sha256-jl5A7Pv+VfrShD3mNcK1EVIQ1luoqe6N9FmQKx226kc=",
       "Microsoft.AspNetCore.Components.Web.dll": "sha256-nfJzcMQ6Ih46u6YArWnsPQ1rB\/KxPB7Z9xJdknc92qQ=",
@@ -59,8 +59,8 @@
     "libraryInitializers": null,
     "pdb": null,
     "runtime": {
-      "dotnet.6.0.1.b3vk8kr1sd.js": "sha256-KdWcvx4DSAh1qE2BeKVE+l7hnyAm\/t7OT5AF+hmegis=",
-      "dotnet.wasm": "sha256-dw1mlSQCFT6c9W5UQs1t+3GyKUa+aDd8f9KxBHPPqYg="
+      "dotnet.6.0.1.b3vk8kr1sd.js": "sha256-30rAIBqGsq5bVgAmUQK+BxOMNN2IDAc58fYvI1cMAb4=",
+      "dotnet.wasm": "sha256-mQFRuNEZ1YqaAgaXqNrX1ne9pLDw4SJt6FBXo0cRpaA="
     },
     "satelliteResources": null
   }
