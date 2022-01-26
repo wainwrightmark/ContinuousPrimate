@@ -1,0 +1,8 @@
+- [ ] Rename to something
+- [ ] Add to Github
+- [ ] Add icons
+- [ ] Add social buttons
+- [ ] Add general anagram feature
+- [ ] Add paging
+- [ ] Add SVG animations
+- [ ] Store favourites

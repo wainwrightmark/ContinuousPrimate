@@ -1,0 +1,79 @@
+﻿@using System.Collections.Concurrent
+<MudContainer MaxWidth="MaxWidth.Small">
+    <MudTextField
+        @bind-Value="TextValue"
+        Label="Surname"
+        Variant="Variant.Text"
+
+        Clearable="true"/>
+
+    @if (Anagrams is not null)
+    {
+        <MudDataGrid Virtualize="true" Items="@Anagrams.Skip((PageNumber - 1) * PageSize).Take(PageSize)" ReadOnly="true" >
+            <Columns>
+                <Column T="PartialAnagram" Field="@nameof(PartialAnagram.FullName)"/>
+                <Column T="PartialAnagram" Field="@nameof(PartialAnagram.Anagram)"/>
+            </Columns>
+            
+            
+        </MudDataGrid>
+        <MudNumericField T="int" 
+                         @bind-Value="PageNumber" 
+                         Min="1" 
+                         HideSpinButtons="true"
+                         Adornment="Adornment.End"
+                         AdornmentIcon="@Icons.Filled.NavigateNext"
+                         OnAdornmentClick="() => PageNumber++"/>
+    }
+    else
+    {
+        <MudSkeleton Style="margin-top: 100px" SkeletonType="SkeletonType.Rectangle" Width="100%" Height="300px"/>
+    }
+    
+    
+
+</MudContainer>
+
+
+@code{
+
+    public int PageNumber { get; set; } = 1;
+
+    public int PageSize = 10;
+
+    private string _textValue;
+
+    public string TextValue
+    {
+        get => _textValue;
+        set
+        {
+            _textValue = value;
+            Search();
+        }
+    }
+
+    public IEnumerable<PartialAnagram>? Anagrams = null;
+
+
+    private bool _isSearching;
+
+    public void Search()
+    {
+        if (!_isSearching)
+        {
+            PageNumber = 1;
+            Anagrams = null;
+
+            var result =
+                _cache.GetOrAdd(TextValue, t => NameSearch.Search(t).Memoize());
+
+
+            Anagrams = result;
+        }
+    }
+
+    private readonly ConcurrentDictionary<string, IEnumerable<PartialAnagram>> _cache = new();
+
+
+}
