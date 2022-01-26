@@ -4,20 +4,19 @@ using Xunit.Abstractions;
 //using WordNet;
 
 namespace ContinuousPrimate.Test;
-public class UnitTest1
+
+public class IntegrationTests
 {
-    public UnitTest1(ITestOutputHelper testOutputHelper)
+    public IntegrationTests(ITestOutputHelper testOutputHelper)
     {
         TestOutputHelper = testOutputHelper;
-    }
-
-    
+    }    
 
     public ITestOutputHelper TestOutputHelper { get; }
 
     [Theory]
+    [InlineData("beckham")]
     [InlineData("wainwright")]
-    [InlineData("mark")]
     [InlineData("cheung")]
     [InlineData("scaysbrooke")]
     [InlineData("walker")]
@@ -33,15 +32,13 @@ public class UnitTest1
     [InlineData("thomas")]
     public void TestSearch(string mainName)
     {
-
-
         var results = 
         NameSearch.GetPartialAnagrams(mainName
-        ).ToList();
+        );
 
         foreach (var partialAnagram in results)
         {
-            var text = $"{partialAnagram} = {partialAnagram.Anagram}";
+            var text = $"{partialAnagram.FullName} = {partialAnagram.Anagram}";
 
             TestOutputHelper.WriteLine(text);
         }

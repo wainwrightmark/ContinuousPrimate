@@ -27,9 +27,9 @@ public static class NameSearch
     }
 
 
-    public static IEnumerable<string> GetAllFirstNames => Wordlist.Names.Split('\n');
-    public static IEnumerable<string> GetAllNouns => Wordlist.Nouns.Split('\n');
-    public static IEnumerable<string> GetAllAdjectives => Wordlist.Adjectives.Split('\n');
+    public static IEnumerable<string> GetAllFirstNames => Wordlist.Names.Split('\n', StringSplitOptions.TrimEntries);
+    public static IEnumerable<string> GetAllNouns => Wordlist.Nouns.Split('\n', StringSplitOptions.TrimEntries);
+    public static IEnumerable<string> GetAllAdjectives => Wordlist.Adjectives.Split('\n', StringSplitOptions.TrimEntries);
 
     public static readonly Lazy<ILookup<AnagramKey, string>> FirstNameLookup = new(() => GetAllFirstNames.ToLookup(AnagramKey.Create));
     public static readonly Lazy<ILookup<AnagramKey, string>> NounLookup = new(() => GetAllNouns.ToLookup(AnagramKey.Create));
@@ -96,10 +96,6 @@ public static class NameSearch
             
         }
     }
-
-
-
-
 }
 
 public readonly record struct AnagramKey(string Text)
@@ -108,7 +104,7 @@ public readonly record struct AnagramKey(string Text)
     /// Create from a piece of text
     /// </summary>
     public static AnagramKey Create(string s)
-        => new(new string(s.Trim().ToLowerInvariant().OrderBy(x => x).ToArray()));
+        => new(new string(s.ToLowerInvariant().OrderBy(x => x).ToArray()));
     
     /// <summary>
     /// Create from a piece of text that might contain special characters
@@ -174,6 +170,8 @@ public readonly record struct AnagramKey(string Text)
                 return null; //There is a char in other which isn't in this
             }
         }
+
+        if (otherIndex < other.Text.Length) return null; //There are remaining characters in other we shouldn't return
 
         return new AnagramKey(sb.ToString());
     }
