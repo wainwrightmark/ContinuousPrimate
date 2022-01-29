@@ -1,5 +1,6 @@
 ﻿@using System.Collections.Concurrent
 @inject HttpClient _httpClient;
+@inject Blazored.LocalStorage.ILocalStorageService _localStorage
 
 <MudContainer MaxWidth="MaxWidth.Small">
     
@@ -10,12 +11,12 @@
         Variant="Variant.Text"
         Clearable="true" Disabled="@_isSearching"/>
 
-    @if (Data is not null)
+    @if (MyData is not null)
     {
         <MudSimpleTable Hover="true" Dense="true" Striped="true">
 
             <tbody>
-            @foreach (var row in Data.TableElements)
+            @foreach (var row in MyData.TableElements)
             {
                 <tr>
                     <td>
@@ -38,11 +39,22 @@
                             Icon="@Icons.Custom.Brands.Facebook"
                             Title="Share on Facebook"
                             Target="_blank"/>
+
                         <MudIconButton
                             Link="@SocialHelpers.GetTwitterShareUrl(row)"
                             Icon="@Icons.Custom.Brands.Twitter"
                             Title="Share on Twitter"
                             Target="_blank"/>
+                        
+                        <MudToggleIconButton
+                            Icon="@Icons.Filled.StarOutline"
+                            ToggledIcon="@Icons.Filled.Star"
+                            Title="Favourite"
+                            Toggled="@DatabaseWords.Contains(row)"
+                            ToggledChanged="b=>SetFavourite(b, row)"
+                        />
+
+                        
                     </td>
                 </tr>
             }
@@ -50,29 +62,35 @@
 
         </MudSimpleTable>
 
-        <MudToolBar>
-            <MudIconButton
-                Link="https://github.com/wainwrightmark/ContinuousPrimate"
-                Icon="@Icons.Custom.Brands.GitHub"
-                Title="View on Github"
-                Target="_blank"/>
-            <MudSpacer/>
+        
+    }
+    else
+    {
+        <MudSkeleton Style="margin-top: 50px" SkeletonType="SkeletonType.Rectangle" Width="100%" Height="450px"/>
+    }
+    
+    
+    <MudToolBar>
+        <MudIconButton
+            Link="https://github.com/wainwrightmark/ContinuousPrimate"
+            Icon="@Icons.Custom.Brands.GitHub"
+            Title="View on Github"
+            Target="_blank"/>
+        <MudSpacer/>
+        @if (MyData is not null)
+        {
             <MudNumericField T="int"
-                             @bind-Value="Data.PageNumber"
+                             @bind-Value="MyData.PageNumber"
                              Min="1"
                              FullWidth="false"
                              Style="Width: 60px;"
                              HideSpinButtons="true"
                              Adornment="Adornment.End"
                              AdornmentIcon="@Icons.Filled.NavigateNext"
-                             Disabled="@(!Data.CanIncreasePageNumber)"
-                             OnAdornmentClick="() => Data.PageNumber++"/>
-        </MudToolBar>
-    }
-    else
-    {
-        <MudSkeleton Style="margin-top: 100px" SkeletonType="SkeletonType.Rectangle" Width="100%" Height="300px"/>
-    }
+                             Disabled="@(!MyData.CanIncreasePageNumber)"
+                             OnAdornmentClick="() => MyData.PageNumber++"/>
+        }
+    </MudToolBar>
 
 </MudContainer>
 
@@ -86,40 +104,59 @@
 
         Console.WriteLine(DateTime.Now + ": Component Initialized");
 
-        if (FirstNames is null)
+        await LoadWordData();
+        await LoadDatabaseWords();
+    }
+
+        private const string SavedWordsKey = "ContinuousPrimateSavedWords";
+
+    private async Task LoadDatabaseWords()
+    {
+        var data = await _localStorage.GetItemAsync<List<PartialAnagram>>(SavedWordsKey);
+
+        DatabaseWords.UnionWith(data);
+
+        Console.WriteLine($"{DatabaseWords.Count} Database Words Found");
+        
+        DatabaseWordsData = new LoadedData(DatabaseWords);
+        StateHasChanged();
+    }
+
+    private async Task LoadWordData()
+    {
+        if (_firstNames is null)
         {
             var names = await _httpClient.GetStringAsync("./Data/Names.txt");
             Console.WriteLine(DateTime.Now + ": Names Loaded");
-            FirstNames = new Lazy<IEnumerable<(AnagramKey key, string name)>>(
-
+            _firstNames = new Lazy<IEnumerable<(AnagramKey key, string name)>>(
                 names
                     .Split('\n', StringSplitOptions.TrimEntries)
-                    .Select(name=> (AnagramKey.Create(name), name)).Memoize()
-            
+                    .Select(name => (AnagramKey.Create(name), name)).Memoize()
                 );
         }
-        if (NounLookup is null)
+
+        if (_nounLookup is null)
         {
             var nouns = await _httpClient.GetStringAsync("./Data/Nouns.txt");
             Console.WriteLine(DateTime.Now + ": Nouns Loaded");
-            NounLookup = WordListHelper.MakeLookup(nouns);
+            _nounLookup = WordListHelper.MakeLookup(nouns);
         }
 
-        if (AdjectiveLookup is null)
+        if (_adjectiveLookup is null)
         {
             var adjectives = await _httpClient.GetStringAsync("./Data/Adjectives.txt");
             Console.WriteLine(DateTime.Now + ": Adjectives Loaded");
-            AdjectiveLookup = WordListHelper.MakeLookup(adjectives);
+            _adjectiveLookup = WordListHelper.MakeLookup(adjectives);
         }
     }
 
 
-    private static Lazy<IEnumerable<(AnagramKey key, string name)>> FirstNames;
-    private static Lazy<ILookup<AnagramKey, Word>> NounLookup;
-    private static Lazy<ILookup<AnagramKey, Word>> AdjectiveLookup;
+    private static Lazy<IEnumerable<(AnagramKey key, string name)>>? _firstNames;
+    private static Lazy<ILookup<AnagramKey, Word>>? _nounLookup;
+    private static Lazy<ILookup<AnagramKey, Word>>? _adjectiveLookup;
 
     
-    private string _textValue;
+    private string _textValue = "";
     public string TextValue
     {
         get => _textValue;
@@ -130,10 +167,48 @@
         }
     }
 
-    public List<PartialAnagram> DatabaseWord;
+
+    public async Task RemoveDatabaseWord(PartialAnagram pa)
+    {
+        if(DatabaseWords.Remove(pa))
+            await _localStorage.SetItemAsync(SavedWordsKey, DatabaseWords.ToList());
+    }
+    
+    public async Task AddDatabaseWord(PartialAnagram pa)
+    {
+        if(DatabaseWords.Add(pa))
+            await _localStorage.SetItemAsync(SavedWordsKey, DatabaseWords.ToList());
+    }
+
+    public readonly HashSet<PartialAnagram> DatabaseWords = new();
 
 
-    public LoadedData? Data { get; private set; }
+    
+
+    public LoadedData? MyData
+    {
+        get
+        {
+            if (_isSearching) return null;
+
+            if (SearchData is not null && SearchData.Anagrams.Any()) return SearchData;
+            if (DatabaseWordsData is not null && DatabaseWordsData.Anagrams.Any()) return DatabaseWordsData;
+
+
+
+            return null;
+        }
+    }
+
+    public LoadedData? DatabaseWordsData;
+
+    public LoadedData? SearchData { get; private set; }
+
+    private Task SetFavourite(bool fav, PartialAnagram anagram)
+    {
+        if (fav) return AddDatabaseWord(anagram);
+        else return RemoveDatabaseWord(anagram);
+    }
 
     public string HelperText = "Type your last name (or whatever)";
 
@@ -141,24 +216,24 @@
 
     public async Task Search()
     {
-        if (!_isSearching)
+        if (!_isSearching && _firstNames is not null && _nounLookup is not null && _adjectiveLookup is not null)
         {
             HelperText = "Searching";
             _isSearching = true;
-            Data = null;
+            SearchData = null;
 
             StateHasChanged();
             await Task.Delay(1);
 
             var result =
                 _cache.GetOrAdd(TextValue, t => NameSearch.Search(t, 
-                    FirstNames.Value,
-                    NounLookup.Value,
-                    AdjectiveLookup.Value
+                    _firstNames.Value,
+                    _nounLookup.Value,
+                    _adjectiveLookup.Value
                     ).Memoize());
 
             HelperText = "";
-            Data = new LoadedData(result);
+            SearchData = new LoadedData(result);
             _isSearching = false;
             StateHasChanged();
         }
@@ -166,5 +241,7 @@
 
     private readonly ConcurrentDictionary<string, IEnumerable<PartialAnagram>> _cache = new();
 
+
+    
 
 }
