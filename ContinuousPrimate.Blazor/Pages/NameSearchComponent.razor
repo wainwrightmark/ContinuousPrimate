@@ -6,16 +6,16 @@
     <MudTextField
         @bind-Value="TextValue"
         Label="Name"
-        HelperText="Type your last name (or whatever)"
+        HelperText="@HelperText"
         Variant="Variant.Text"
-        Clearable="true"/>
+        Clearable="true" Disabled="@_isSearching"/>
 
-    @if (Anagrams is not null)
+    @if (Data is not null)
     {
         <MudSimpleTable Hover="true" Dense="true" Striped="true">
 
             <tbody>
-            @foreach (var row in TableElements)
+            @foreach (var row in Data.TableElements)
             {
                 <tr>
                     <td>
@@ -58,14 +58,15 @@
                 Target="_blank"/>
             <MudSpacer/>
             <MudNumericField T="int"
-                             @bind-Value="PageNumber"
+                             @bind-Value="Data.PageNumber"
                              Min="1"
                              FullWidth="false"
                              Style="Width: 60px;"
                              HideSpinButtons="true"
                              Adornment="Adornment.End"
                              AdornmentIcon="@Icons.Filled.NavigateNext"
-                             OnAdornmentClick="() => PageNumber++"/>
+                             Disabled="@(!Data.CanIncreasePageNumber)"
+                             OnAdornmentClick="() => Data.PageNumber++"/>
         </MudToolBar>
     }
     else
@@ -117,9 +118,7 @@
     private static Lazy<ILookup<AnagramKey, Word>> NounLookup;
     private static Lazy<ILookup<AnagramKey, Word>> AdjectiveLookup;
 
-    public int PageNumber { get; set; } = 1;
-    public int PageSize = 10;
-
+    
     private string _textValue;
     public string TextValue
     {
@@ -131,28 +130,25 @@
         }
     }
 
-    public IEnumerable<PartialAnagram> TableElements
-    {
-        get
-        {
-            if (Anagrams is null)
-                return ArraySegment<PartialAnagram>.Empty;
+    public List<PartialAnagram> DatabaseWord;
 
-            return Anagrams.Skip((PageNumber - 1) * PageSize).Take(PageSize);
-        }
-    }
 
-    public IEnumerable<PartialAnagram>? Anagrams = null;
+    public LoadedData? Data { get; private set; }
 
+    public string HelperText = "Type your last name (or whatever)";
 
     private bool _isSearching;
 
-    public void Search()
+    public async Task Search()
     {
         if (!_isSearching)
         {
-            PageNumber = 1;
-            Anagrams = null;
+            HelperText = "Searching";
+            _isSearching = true;
+            Data = null;
+
+            StateHasChanged();
+            await Task.Delay(1);
 
             var result =
                 _cache.GetOrAdd(TextValue, t => NameSearch.Search(t, 
@@ -161,8 +157,10 @@
                     AdjectiveLookup.Value
                     ).Memoize());
 
-
-            Anagrams = result;
+            HelperText = "";
+            Data = new LoadedData(result);
+            _isSearching = false;
+            StateHasChanged();
         }
     }
 
