@@ -1,12 +1,54 @@
 ﻿using System.Text;
-
+using MoreLinq.Experimental;
 namespace ContinuousPrimate;
+
+public record Word(string Text, string Gloss);
+
+
+public static class WordListHelper
+{
+    public static Lazy<ILookup<AnagramKey, Word>> MakeLookup(string data)
+    {
+        return
+            new(() =>
+                {
+                    var result = data
+                        .Split('\n', StringSplitOptions.TrimEntries)
+                        .Select(Split)
+                        .ToLookup(x => x.Key, x => x.Word);
+
+                    Console.WriteLine(DateTime.Now + ": Lookup Created");
+
+                    return result;
+                }
+                );
+
+        static (AnagramKey Key, Word Word) Split(string s)
+        {
+            var terms = s.Split('\t');
+            var key = new AnagramKey(terms[0]);
+            var text = terms[1];
+            var gloss = terms[2];
+
+            return new(key, new Word(text, gloss));
+        }
+    }
+
+    public static Lazy<IEnumerable<(AnagramKey key, string name)>> MakeEnumerable(string data)
+    {
+        return new(()=>data
+                .Split('\n', StringSplitOptions.TrimEntries)
+                .Select(name => (AnagramKey.Create(name), name)).Memoize()
+                ) ;
+    }
+}
+
 public static class NameSearch
 {
     public static IEnumerable<PartialAnagram> Search(string name,
         IEnumerable<(AnagramKey key, string name)> firstNames,
-        ILookup<AnagramKey, string> nounLookup,
-        ILookup<AnagramKey, string> adjectiveLookup
+        ILookup<AnagramKey, Word> nounLookup,
+        ILookup<AnagramKey, Word> adjectiveLookup
         )
     {
         if(string.IsNullOrWhiteSpace(name))
@@ -19,30 +61,16 @@ public static class NameSearch
 
         return FindNameAnagrams(name, firstNames, nounLookup, adjectiveLookup);
     }
-
-    //public static IEnumerable<PartialAnagram> GetPartialAnagrams(string name)
-    //{
-    //    var r =
-    //        FindNameAnagrams(name, FirstNames.Value, NounLookup.Value, AdjectiveLookup.Value);
-        
-    //    return r;
-    //}
-
-
-    //public static IEnumerable<string> GetAllFirstNames => Wordlist.Names.Split('\n', StringSplitOptions.TrimEntries);
-    //public static IEnumerable<string> GetAllNouns => Wordlist.Nouns.Split('\n', StringSplitOptions.TrimEntries);
-    //public static IEnumerable<string> GetAllAdjectives => Wordlist.Adjectives.Split('\n', StringSplitOptions.TrimEntries);
-
     
-
 
     public static IEnumerable<PartialAnagram> FindAnagrams(
         string fullTerm,
-        ILookup<AnagramKey, string> nouns,
-        ILookup<AnagramKey, string> adjectives
+        ILookup<AnagramKey, Word> nouns,
+        ILookup<AnagramKey, Word> adjectives
     )
     {
         var key = AnagramKey.CreateCareful(fullTerm);
+        var originalTerms = fullTerm.Split(' ', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
 
         foreach (var adjective in adjectives)
         {
@@ -54,8 +82,8 @@ public static class NameSearch
 
                 if (noun is not null)
                 {
-                    yield return new PartialAnagram(fullTerm,
-                        adjective.First() + " " + noun
+                    yield return new PartialAnagram(originalTerms,
+                        new List<Word>(){adjective.First(), noun}
                     );
                 }
             }
@@ -66,8 +94,8 @@ public static class NameSearch
     public static IEnumerable<PartialAnagram> FindNameAnagrams(
         string mainWord,
         IEnumerable<(AnagramKey key, string word)> names,
-        ILookup<AnagramKey, string> nouns,
-        ILookup<AnagramKey, string> adjectives)
+        ILookup<AnagramKey, Word> nouns,
+        ILookup<AnagramKey, Word> adjectives)
     {
         var mainKey = AnagramKey.CreateCareful(mainWord);
         
@@ -86,8 +114,9 @@ public static class NameSearch
 
                     if (noun is not null)
                     {
-                        yield return new PartialAnagram(firstName+ " " + mainWord,
-                            adjective.First() + " " + noun
+                        yield return new PartialAnagram(
+                            new List<string>(){firstName, mainWord},
+                            new List<Word>(){adjective.First(), noun}
                         );
                         break; //now try a new name - it's dumb to have more than one anagram per name
                     }
@@ -181,4 +210,14 @@ public readonly record struct AnagramKey(string Text)
 
 
 
-public record PartialAnagram(string FullName, string Anagram);
+public record PartialAnagram(IReadOnlyList<string> OriginalTerms, IReadOnlyList<Word> AnagramWords)
+{
+    /// <inheritdoc />
+    public override string ToString()
+    {
+        return TermsText + " = " + AnagramText;
+    }
+
+    public string TermsText => string.Join(" ", OriginalTerms);
+    public string AnagramText => string.Join(" ", AnagramWords.Select(x => x.Text));
+}

@@ -26,7 +26,7 @@ public static class SocialHelpers
 
     public static string GetQuote(PartialAnagram partialAnagram)
     {
-        return $"If my child was called '{partialAnagram.FullName}' they'd be {GetArticle(partialAnagram.Anagram)} {partialAnagram.Anagram}.";
+        return $"If my child was called '{partialAnagram.TermsText}' they'd be {GetArticle(partialAnagram.AnagramText)} {partialAnagram.AnagramText}.";
     }
 
     private static string GetArticle(string s)

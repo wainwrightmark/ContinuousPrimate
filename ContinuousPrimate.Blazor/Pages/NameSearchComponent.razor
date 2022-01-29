@@ -18,8 +18,8 @@
             @foreach (var row in TableElements)
             {
                 <tr>
-                    <td>@row.FullName</td>
-                    <td>@row.Anagram</td>
+                    <td>@row.TermsText</td>
+                    <td>@row.AnagramText</td>
 
                     <td>
                         <MudIconButton
@@ -72,36 +72,39 @@
     {
         await base.OnInitializedAsync();
 
-        var adjectives = await _httpClient.GetStringAsync("./Data/Adjectives.txt");
-        var names = await _httpClient.GetStringAsync("./Data/Names.txt");
-        var nouns = await _httpClient.GetStringAsync("./Data/Nouns.txt");
+        Console.WriteLine(DateTime.Now + ": Component Initialized");
 
-        AdjectiveLookup = new Lazy<ILookup<AnagramKey, string>>(()=>
-            adjectives
-                .Split('\n', StringSplitOptions.TrimEntries)
-                .ToLookup(AnagramKey.Create)
-            );
-        
-        NounLookup = new Lazy<ILookup<AnagramKey, string>>(()=>
-            nouns
-                .Split('\n', StringSplitOptions.TrimEntries)
-                .ToLookup(AnagramKey.Create)
-            );
+        if (FirstNames is null)
+        {
+            var names = await _httpClient.GetStringAsync("./Data/Names.txt");
+            Console.WriteLine(DateTime.Now + ": Names Loaded");
+            FirstNames = new Lazy<IEnumerable<(AnagramKey key, string name)>>(
 
-        FirstNames = new Lazy<IEnumerable<(AnagramKey key, string name)>>(
-
-            names
-                .Split('\n', StringSplitOptions.TrimEntries)
-                .Select(name=> (AnagramKey.Create(name), name)).Memoize()
+                names
+                    .Split('\n', StringSplitOptions.TrimEntries)
+                    .Select(name=> (AnagramKey.Create(name), name)).Memoize()
             
-            );
+                );
+        }
+        if (NounLookup is null)
+        {
+            var nouns = await _httpClient.GetStringAsync("./Data/Nouns.txt");
+            Console.WriteLine(DateTime.Now + ": Nouns Loaded");
+            NounLookup = WordListHelper.MakeLookup(nouns);
+        }
 
+        if (AdjectiveLookup is null)
+        {
+            var adjectives = await _httpClient.GetStringAsync("./Data/Adjectives.txt");
+            Console.WriteLine(DateTime.Now + ": Adjectives Loaded");
+            AdjectiveLookup = WordListHelper.MakeLookup(adjectives);
+        }
     }
 
 
     private static Lazy<IEnumerable<(AnagramKey key, string name)>> FirstNames;
-    private static Lazy<ILookup<AnagramKey, string>> NounLookup;
-    private static Lazy<ILookup<AnagramKey, string>> AdjectiveLookup;
+    private static Lazy<ILookup<AnagramKey, Word>> NounLookup;
+    private static Lazy<ILookup<AnagramKey, Word>> AdjectiveLookup;
 
     public int PageNumber { get; set; } = 1;
     public int PageSize = 10;
