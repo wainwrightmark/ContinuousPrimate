@@ -2,7 +2,7 @@
 @inject HttpClient _httpClient;
 @inject Blazored.LocalStorage.ILocalStorageService _localStorage
 
-<MudContainer MaxWidth="MaxWidth.Small">
+<MudContainer MaxWidth="MaxWidth.Small" Style="padding-left: 0; padding-right: 0;">
     
     <MudTextField
         @bind-Value="TextValue"
@@ -112,7 +112,7 @@
 
     private async Task LoadDatabaseWords()
     {
-        var data = await _localStorage.GetItemAsync<List<PartialAnagram>>(SavedWordsKey);
+        var data = await _localStorage.GetItemAsync<List<PartialAnagram>>(SavedWordsKey)?? new List<PartialAnagram>();
 
         DatabaseWords.UnionWith(data);
 
