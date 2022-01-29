@@ -22,7 +22,35 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\Puns\WordNet\WordNet.csproj" />
     <ProjectReference Include="..\ContinuousPrimate\ContinuousPrimate.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Words.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Words.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="Words.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Words.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Data\Adjectives.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Data\Names.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Data\Nouns.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

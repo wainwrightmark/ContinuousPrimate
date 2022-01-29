@@ -4,7 +4,7 @@
     <TargetFramework>net6.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-	  <RunAOTCompilation>true</RunAOTCompilation>
+	  <RunAOTCompilation>false</RunAOTCompilation>
 	  <BlazorWebAssemblyEnableLinking>false</BlazorWebAssemblyEnableLinking>
 	  <InvariantGlobalization>true</InvariantGlobalization>
 	  <BlazorEnableTimeZoneSupport>false</BlazorEnableTimeZoneSupport>
@@ -28,9 +28,15 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="wwwroot\Data\Adjectives.txt" />
-    <None Include="wwwroot\Data\Names.txt" />
-    <None Include="wwwroot\Data\Nouns.txt" />
+    <None Include="wwwroot\Data\Adjectives.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="wwwroot\Data\Names.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="wwwroot\Data\Nouns.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>
