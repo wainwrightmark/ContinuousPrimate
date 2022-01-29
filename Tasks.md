@@ -1,8 +1,10 @@
-- [ ] Rename to something
-- [ ] Add to Github
-- [ ] Add icons
-- [ ] Add social buttons
-- [ ] Add general anagram feature
-- [ ] Add paging
+- [x] Rename to something
+- [x] Add to Github
+- [x] Add icons
+- [x] Add social buttons
+- [x] Add general anagram feature
+- [x] Add paging
 - [ ] Add SVG animations
 - [ ] Store favourites
+- [ ] Add definitions
+- [ ] Fix issue with paging

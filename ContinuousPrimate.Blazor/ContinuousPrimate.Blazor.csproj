@@ -4,7 +4,7 @@
     <TargetFramework>net6.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-	  <RunAOTCompilation>false</RunAOTCompilation>
+	  <RunAOTCompilation>true</RunAOTCompilation>
 	  <BlazorWebAssemblyEnableLinking>false</BlazorWebAssemblyEnableLinking>
 	  <InvariantGlobalization>true</InvariantGlobalization>
 	  <BlazorEnableTimeZoneSupport>false</BlazorEnableTimeZoneSupport>

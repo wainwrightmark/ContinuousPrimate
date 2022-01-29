@@ -18,8 +18,19 @@
             @foreach (var row in TableElements)
             {
                 <tr>
-                    <td>@row.TermsText</td>
-                    <td>@row.AnagramText</td>
+                    <td>
+                        <MudText>@row.TermsText</MudText>
+                        
+                    </td>
+                    <td>
+                        @foreach (var word in @row.AnagramWords)
+                        {
+                            <MudTooltip Arrow="true" Text="@word.Gloss">
+                                <MudText>@word.Text </MudText>
+                            </MudTooltip>
+                            <MudElement> </MudElement>
+                        }
+                    </td>
 
                     <td>
                         <MudIconButton
