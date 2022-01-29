@@ -19,13 +19,13 @@ public class IntegrationTests
     public ITestOutputHelper TestOutputHelper { get; }
 
 
-    private static Lazy<IEnumerable<(AnagramKey key, string name)>> FirstNames =
+    private static readonly Lazy<IEnumerable<(AnagramKey key, string name)>> FirstNames =
         WordListHelper.MakeEnumerable(Words.Names);
 
-    private static Lazy<ILookup<AnagramKey, Word>> NounLookup =
+    private static readonly Lazy<ILookup<AnagramKey, Word>> NounLookup =
         WordListHelper.MakeLookup(Words.Nouns);
 
-    private static Lazy<ILookup<AnagramKey, Word>> AdjectiveLookup =
+    private static readonly Lazy<ILookup<AnagramKey, Word>> AdjectiveLookup =
         WordListHelper.MakeLookup(Words.Adjectives);
 
     
@@ -104,7 +104,7 @@ public class IntegrationTests
 
     public static string FormatGloss(SynSet synSet)
     {
-        if (string.IsNullOrWhiteSpace(synSet.Gloss)) return Format(synSet.Words.First());
+        if (string.IsNullOrWhiteSpace(synSet.Gloss)) return Format(synSet.Words[0]);
 
         return Format(synSet.Gloss);
 
@@ -118,13 +118,13 @@ public class IntegrationTests
             s = BracketRegex.Replace(s, "");
 
             if (char.IsLetter(s.First()))
-                return s.Substring(0, 1).ToUpperInvariant() + s.Substring(1);
+                return s[..1].ToUpperInvariant() + s[1..];
 
             return s;
         }
     }
 
-    private static readonly Regex BracketRegex = new Regex("^\\s*\\(.*?\\)\\s*", RegexOptions.Compiled);
+    private static readonly Regex BracketRegex = new("^\\s*\\(.*?\\)\\s*", RegexOptions.Compiled);
 
     [Theory]
     [InlineData("birthwort")]
@@ -143,7 +143,7 @@ public class IntegrationTests
         var synsets = wordNetEngine.GetSynSets(word).ToList();
 
         TestOutputHelper.WriteLine(word);
-        TestOutputHelper.WriteLine(synsets.Count() + " Synsets");
+        TestOutputHelper.WriteLine(synsets.Count + " Synsets");
 
         foreach (var synSet in synsets)   
         {

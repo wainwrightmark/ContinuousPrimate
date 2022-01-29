@@ -10,7 +10,7 @@ public static class WordListHelper
     public static Lazy<ILookup<AnagramKey, Word>> MakeLookup(string data)
     {
         return
-            new(() =>
+            new Lazy<ILookup<AnagramKey, Word>>(() =>
                 {
                     var result = data
                         .Split('\n', StringSplitOptions.TrimEntries)
@@ -30,13 +30,13 @@ public static class WordListHelper
             var text = terms[1];
             var gloss = terms[2];
 
-            return new(key, new Word(text, gloss));
+            return new ValueTuple<AnagramKey, Word>(key, new Word(text, gloss));
         }
     }
 
     public static Lazy<IEnumerable<(AnagramKey key, string name)>> MakeEnumerable(string data)
     {
-        return new(()=>data
+        return new Lazy<IEnumerable<(AnagramKey key, string name)>>(()=>data
                 .Split('\n', StringSplitOptions.TrimEntries)
                 .Select(name => (AnagramKey.Create(name), name)).Memoize()
                 ) ;
@@ -155,11 +155,11 @@ public readonly record struct AnagramKey(string Text)
         }
 
         if (i < Text.Length)
-            sb.Append(Text.Substring(i));
+            sb.Append(Text[i..]);
         if (j < other.Text.Length)
-            sb.Append(other.Text.Substring(j));
+            sb.Append(other.Text[j..]);
 
-        return new(sb.ToString());
+        return new AnagramKey(sb.ToString());
     }
 
     public AnagramKey? TrySubtract(AnagramKey other)
@@ -178,7 +178,7 @@ public readonly record struct AnagramKey(string Text)
             if (otherIndex >= other.Text.Length)
             {
                 //We've finished consuming the other string
-                sb.Append(Text.Substring(thisIndex));
+                sb.Append(Text[thisIndex..]);
 
                 break;
             }
