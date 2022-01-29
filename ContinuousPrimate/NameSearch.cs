@@ -3,37 +3,37 @@
 namespace ContinuousPrimate;
 public static class NameSearch
 {
-
-
-    public static IEnumerable<PartialAnagram> Search(string name)
+    public static IEnumerable<PartialAnagram> Search(string name,
+        IEnumerable<(AnagramKey key, string name)> firstNames,
+        ILookup<AnagramKey, string> nounLookup,
+        ILookup<AnagramKey, string> adjectiveLookup
+        )
     {
         if(string.IsNullOrWhiteSpace(name))
             return ArraySegment<PartialAnagram>.Empty;
 
         if (name.Contains(" ") || name.Length >= 15)
         {
-            return FindAnagrams(name, NounLookup.Value, AdjectiveLookup.Value);
+            return FindAnagrams(name, nounLookup, adjectiveLookup);
         }
 
-        return FindNameAnagrams(name, FirstNameLookup.Value, NounLookup.Value, AdjectiveLookup.Value);
+        return FindNameAnagrams(name, firstNames, nounLookup, adjectiveLookup);
     }
 
-    public static IEnumerable<PartialAnagram> GetPartialAnagrams(string name)
-    {
-        var r =
-            FindNameAnagrams(name, FirstNameLookup.Value, NounLookup.Value, AdjectiveLookup.Value);
+    //public static IEnumerable<PartialAnagram> GetPartialAnagrams(string name)
+    //{
+    //    var r =
+    //        FindNameAnagrams(name, FirstNames.Value, NounLookup.Value, AdjectiveLookup.Value);
         
-        return r;
-    }
+    //    return r;
+    //}
 
 
-    public static IEnumerable<string> GetAllFirstNames => Wordlist.Names.Split('\n', StringSplitOptions.TrimEntries);
-    public static IEnumerable<string> GetAllNouns => Wordlist.Nouns.Split('\n', StringSplitOptions.TrimEntries);
-    public static IEnumerable<string> GetAllAdjectives => Wordlist.Adjectives.Split('\n', StringSplitOptions.TrimEntries);
+    //public static IEnumerable<string> GetAllFirstNames => Wordlist.Names.Split('\n', StringSplitOptions.TrimEntries);
+    //public static IEnumerable<string> GetAllNouns => Wordlist.Nouns.Split('\n', StringSplitOptions.TrimEntries);
+    //public static IEnumerable<string> GetAllAdjectives => Wordlist.Adjectives.Split('\n', StringSplitOptions.TrimEntries);
 
-    public static readonly Lazy<ILookup<AnagramKey, string>> FirstNameLookup = new(() => GetAllFirstNames.ToLookup(AnagramKey.Create));
-    public static readonly Lazy<ILookup<AnagramKey, string>> NounLookup = new(() => GetAllNouns.ToLookup(AnagramKey.Create));
-    public static readonly Lazy<ILookup<AnagramKey, string>> AdjectiveLookup = new(() => GetAllAdjectives.ToLookup(AnagramKey.Create));
+    
 
 
     public static IEnumerable<PartialAnagram> FindAnagrams(
@@ -65,15 +65,15 @@ public static class NameSearch
 
     public static IEnumerable<PartialAnagram> FindNameAnagrams(
         string mainWord,
-        ILookup<AnagramKey, string> names,
+        IEnumerable<(AnagramKey key, string word)> names,
         ILookup<AnagramKey, string> nouns,
         ILookup<AnagramKey, string> adjectives)
     {
         var mainKey = AnagramKey.CreateCareful(mainWord);
         
-        foreach (var name in names)
+        foreach (var (key, firstName) in names)
         {
-            var combo = mainKey.Add(name.Key);
+            var combo = mainKey.Add(key);
             foreach (var adjective in adjectives)
             {
                 var remainder = combo.TrySubtract(adjective.Key);
@@ -86,10 +86,10 @@ public static class NameSearch
 
                     if (noun is not null)
                     {
-                        yield return new PartialAnagram(name.First()+ " " + mainWord,
+                        yield return new PartialAnagram(firstName+ " " + mainWord,
                             adjective.First() + " " + noun
                         );
-                        break; //now try a new name
+                        break; //now try a new name - it's dumb to have more than one anagram per name
                     }
                 }
             }

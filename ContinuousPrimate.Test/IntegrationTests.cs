@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using Xunit;
 using Xunit.Abstractions;
@@ -32,16 +33,17 @@ public class IntegrationTests
     [InlineData("thomas")]
     public void TestSearch(string mainName)
     {
-        var results = 
-        NameSearch.GetPartialAnagrams(mainName
-        );
+        throw new NotImplementedException();
+        //var results = 
+        //NameSearch.GetPartialAnagrams(mainName
+        //);
 
-        foreach (var partialAnagram in results)
-        {
-            var text = $"{partialAnagram.FullName} = {partialAnagram.Anagram}";
+        //foreach (var partialAnagram in results)
+        //{
+        //    var text = $"{partialAnagram.FullName} = {partialAnagram.Anagram}";
 
-            TestOutputHelper.WriteLine(text);
-        }
+        //    TestOutputHelper.WriteLine(text);
+        //}
     }
 
     //[Theory]

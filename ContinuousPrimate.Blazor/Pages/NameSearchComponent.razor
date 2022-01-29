@@ -1,5 +1,8 @@
 ﻿@using System.Collections.Concurrent
+@inject HttpClient _httpClient;
+
 <MudContainer MaxWidth="MaxWidth.Small">
+    
     <MudTextField
         @bind-Value="TextValue"
         Label="Name"
@@ -9,40 +12,101 @@
 
     @if (Anagrams is not null)
     {
-        <MudDataGrid Virtualize="true" Items="@Anagrams.Skip((PageNumber - 1) * PageSize).Take(PageSize)" ReadOnly="true" >
-            <Columns>
-                <Column T="PartialAnagram" Field="@nameof(PartialAnagram.FullName)"/>
-                <Column T="PartialAnagram" Field="@nameof(PartialAnagram.Anagram)"/>
-            </Columns>
-            
-            
-        </MudDataGrid>
-        <MudNumericField T="int" 
-                         @bind-Value="PageNumber" 
-                         Min="1" 
-                         HideSpinButtons="true"
-                         Adornment="Adornment.End"
-                         AdornmentIcon="@Icons.Filled.NavigateNext"
-                         OnAdornmentClick="() => PageNumber++"/>
+        <MudSimpleTable Hover="true" Dense="true" Striped="true">
+
+            <tbody>
+            @foreach (var row in TableElements)
+            {
+                <tr>
+                    <td>@row.FullName</td>
+                    <td>@row.Anagram</td>
+
+                    <td>
+                        <MudIconButton
+                            Link="@SocialHelpers.GetFacebookShareURL(row)"
+                            Icon="@Icons.Custom.Brands.Facebook"
+                            Title="Share on Facebook"
+                            Target="_blank"/>
+                        <MudIconButton
+                            Link="@SocialHelpers.GetTwitterShareUrl(row)"
+                            Icon="@Icons.Custom.Brands.Twitter"
+                            Title="Share on Twitter"
+                            Target="_blank"/>
+                    </td>
+                </tr>
+            }
+            </tbody>
+
+        </MudSimpleTable>
+
+        <MudToolBar>
+            <MudIconButton
+                Link="https://github.com/wainwrightmark/ContinuousPrimate"
+                Icon="@Icons.Custom.Brands.GitHub"
+                Title="View on Github"
+                Target="_blank"/>
+            <MudSpacer/>
+            <MudNumericField T="int"
+                             @bind-Value="PageNumber"
+                             Min="1"
+                             FullWidth="false"
+                             Style="Width: 60px;"
+                             HideSpinButtons="true"
+                             Adornment="Adornment.End"
+                             AdornmentIcon="@Icons.Filled.NavigateNext"
+                             OnAdornmentClick="() => PageNumber++"/>
+        </MudToolBar>
     }
     else
     {
         <MudSkeleton Style="margin-top: 100px" SkeletonType="SkeletonType.Rectangle" Width="100%" Height="300px"/>
     }
-    
-    
 
 </MudContainer>
 
 
 @code{
 
-    public int PageNumber { get; set; } = 1;
+    /// <inheritdoc />
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
 
+        var adjectives = await _httpClient.GetStringAsync("./Data/Adjectives.txt");
+        var names = await _httpClient.GetStringAsync("./Data/Names.txt");
+        var nouns = await _httpClient.GetStringAsync("./Data/Nouns.txt");
+
+        AdjectiveLookup = new Lazy<ILookup<AnagramKey, string>>(()=>
+            adjectives
+                .Split('\n', StringSplitOptions.TrimEntries)
+                .ToLookup(AnagramKey.Create)
+            );
+        
+        NounLookup = new Lazy<ILookup<AnagramKey, string>>(()=>
+            nouns
+                .Split('\n', StringSplitOptions.TrimEntries)
+                .ToLookup(AnagramKey.Create)
+            );
+
+        FirstNames = new Lazy<IEnumerable<(AnagramKey key, string name)>>(
+
+            names
+                .Split('\n', StringSplitOptions.TrimEntries)
+                .Select(name=> (AnagramKey.Create(name), name)).Memoize()
+            
+            );
+
+    }
+
+
+    private static Lazy<IEnumerable<(AnagramKey key, string name)>> FirstNames;
+    private static Lazy<ILookup<AnagramKey, string>> NounLookup;
+    private static Lazy<ILookup<AnagramKey, string>> AdjectiveLookup;
+
+    public int PageNumber { get; set; } = 1;
     public int PageSize = 10;
 
     private string _textValue;
-
     public string TextValue
     {
         get => _textValue;
@@ -50,6 +114,17 @@
         {
             _textValue = value;
             Search();
+        }
+    }
+
+    public IEnumerable<PartialAnagram> TableElements
+    {
+        get
+        {
+            if (Anagrams is null)
+                return ArraySegment<PartialAnagram>.Empty;
+
+            return Anagrams.Skip((PageNumber - 1) * PageSize).Take(PageSize);
         }
     }
 
@@ -66,7 +141,11 @@
             Anagrams = null;
 
             var result =
-                _cache.GetOrAdd(TextValue, t => NameSearch.Search(t).Memoize());
+                _cache.GetOrAdd(TextValue, t => NameSearch.Search(t, 
+                    FirstNames.Value,
+                    NounLookup.Value,
+                    AdjectiveLookup.Value
+                    ).Memoize());
 
 
             Anagrams = result;
