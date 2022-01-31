@@ -1,10 +1,15 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.IO.Compression;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
+using MoreLinq.Experimental;
 using WordNet;
 using Xunit;
 using Xunit.Abstractions;
+using WordDict = System.Collections.Generic.IReadOnlyDictionary<ContinuousPrimate.PartOfSpeech, System.Collections.Generic.IReadOnlyDictionary<ContinuousPrimate.AnagramKey, ContinuousPrimate.Word>>;
 //using WordNet;
 
 namespace ContinuousPrimate.Test;
@@ -14,21 +19,21 @@ public class IntegrationTests
     public IntegrationTests(ITestOutputHelper testOutputHelper)
     {
         TestOutputHelper = testOutputHelper;
-    }    
+    }
 
     public ITestOutputHelper TestOutputHelper { get; }
 
 
     private static readonly Lazy<IEnumerable<(AnagramKey key, string name)>> FirstNames =
-        WordListHelper.MakeEnumerable(Words.Names);
+        WordListHelper.CreateEnumerable(Words.Names);
 
-    private static readonly Lazy<ILookup<AnagramKey, Word>> NounLookup =
-        WordListHelper.MakeLookup(Words.Nouns);
+    private static readonly Lazy<WordDict> FullWordDict =
+        new(()=>
+            WordListHelper.CreateFullWordDictionary(GetFullWordDictText())
+            );
+        
 
-    private static readonly Lazy<ILookup<AnagramKey, Word>> AdjectiveLookup =
-        WordListHelper.MakeLookup(Words.Adjectives);
 
-    
 
 
 
@@ -54,68 +59,127 @@ public class IntegrationTests
         var results =
         NameSearch.FindNameAnagrams(mainName,
                 FirstNames.Value,
-                NounLookup.Value,
-                AdjectiveLookup.Value
-        );
+                FullWordDict.Value
+        ).Memoize();
 
-        foreach (var partialAnagram in results)
+        foreach (var partialAnagram in results.Take(100))
         {
             TestOutputHelper.WriteLine(partialAnagram.ToString());
         }
+
+        TestOutputHelper.WriteLine($"{results.Count()} Names Found");
     }
 
-    [Theory]
-    [InlineData(PartOfSpeech.Adjective)]
-    [InlineData(PartOfSpeech.Noun)]
-    public void TestPartOfSpeech(PartOfSpeech partOfSpeech)
+    public static string GetFullWordDictText()
+    {
+        return string.Join("\n", GetFullWordDictLines().OrderBy(x => x));
+    }
+    public static IEnumerable<string> GetFullWordDictLines()
     {
         var wordNetEngine = new WordNetEngine();
 
         var firstNames = FirstNames.Value.Select(x => x.name).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-        var words = wordNetEngine.GetAllSynSets()
-            .Where(x => x.PartOfSpeech == partOfSpeech)
-            
-            .SelectMany(synSet => synSet.Words.Where(IsGoodWord).Select(word=> (word, synSet)))
-            .GroupBy(x=>x.word, x=>x.synSet)
+        var groupings = wordNetEngine.GetAllSynSets()
+            //.Where(x => x.PartOfSpeech == partOfSpeech)
+            .SelectMany(synSet => synSet.Words.Where(IsGoodWord).Select(word => (word, synSet)))
+            .GroupBy(x => (x.word, x.synSet.PartOfSpeech), x => x.synSet)
             .Distinct().ToList();
 
-        TestOutputHelper.WriteLine(words.Count + " Words");
+        
 
-        foreach (var word in words)
+        foreach (var grouping in groupings)
         {
-            var key = AnagramKey.Create(word.Key);
-            var gloss = FormatGloss(word.First());
+            var key = AnagramKey.Create(grouping.Key.word);
+            var gloss = FormatGloss(grouping);
 
-            TestOutputHelper.WriteLine($"{key.Text}\t{word.Key}\t{gloss}");
+            if (gloss is not null)
+            {
+                yield return $"{GetAbbreviation(grouping.Key.PartOfSpeech)}\t{grouping.Key.word}\t{key.Text}\t{gloss}";
+            }
+        }
+
+        
+        static string GetAbbreviation(WordNet.PartOfSpeech pos)
+        {
+            return pos switch
+            {
+                WordNet.PartOfSpeech.None => "o",
+                WordNet.PartOfSpeech.Noun => "n",
+                WordNet.PartOfSpeech.Verb => "v",
+                WordNet.PartOfSpeech.Adjective => "j",
+                WordNet.PartOfSpeech.Adverb => "a",
+                _ => throw new ArgumentOutOfRangeException(nameof(pos), pos, null)
+            };
         }
 
         bool IsGoodWord(string word)
         {
-            if (word.All(c => char.IsLetter(c) && char.IsLower(c)))
+            if (word.Length > 2)
             {
-                if (!firstNames.Contains(word))
-                    return true;
+                if (word.All(c => char.IsLetter(c) && char.IsLower(c)))
+                {
+                    if (!firstNames.Contains(word))
+                        return true;
+                }
             }
-
             return false;
         }
     }
 
-    public static string FormatGloss(SynSet synSet)
+    [Fact]
+    public void CreateFullWordDictFile()
     {
-        if (string.IsNullOrWhiteSpace(synSet.Gloss)) return Format(synSet.Words[0]);
+        var lines = GetFullWordDictLines().OrderBy(x => x).ToList();
 
-        return Format(synSet.Gloss);
+
+        TestOutputHelper.WriteLine($"{lines.Count} Words");
+        TestOutputHelper.WriteLine("Writing File");
+
+        using var file = File.OpenWrite(@"C:\Users\wainw\source\repos\MarkPersonal\ContinuousPrimate1\ContinuousPrimate.Blazor\wwwroot\Data\WordData.gzip");
+        using var gZipStream = new GZipStream(file, CompressionMode.Compress);
+        using (var writer = new StreamWriter(gZipStream))
+        {
+            foreach (var line in lines)
+            {
+                writer.Write(line);
+                writer.Write('\n');
+            }
+
+        }
+
+        file.Close();
+        TestOutputHelper.WriteLine("File Written");
+
+        
+    }
+
+    public static string? FormatGloss(IGrouping<(string, WordNet.PartOfSpeech), SynSet> grouping)
+    {
+        var gloss = grouping
+            .Select(x => Format(x.Gloss))
+            .OrderBy(x => x.Contains(grouping.Key.Item1)) //Avoid glosses which contain the word
+            .ThenBy(x => x.Length)
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Select(x => x).FirstOrDefault();
+
+        if (string.IsNullOrWhiteSpace(gloss))
+        {
+            return null;
+        }
+
+        return gloss;
 
 
         static string Format(string s)
         {
             if (string.IsNullOrWhiteSpace(s)) return s;
             s = s.Trim()
-                .Split(';', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)[0];
+                .Split(new[] { ';', '|' }, StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)[0];
 
             s = BracketRegex.Replace(s, "");
+
+            if (string.IsNullOrWhiteSpace(s)) return s;
 
             if (char.IsLetter(s.First()))
                 return s[..1].ToUpperInvariant() + s[1..];
@@ -145,13 +209,13 @@ public class IntegrationTests
         TestOutputHelper.WriteLine(word);
         TestOutputHelper.WriteLine(synsets.Count + " Synsets");
 
-        foreach (var synSet in synsets)   
+        foreach (var synSet in synsets)
         {
             TestOutputHelper.WriteLine($"{synSet.Id}: {synSet.Gloss}");
             TestOutputHelper.WriteLine(string.Join(", ", synSet.Words));
 
-            TestOutputHelper.WriteLine(string.Join(", ", synSet.LexicalRelations.Select(x=>x)));
-            TestOutputHelper.WriteLine(string.Join(", ", synSet.SemanticRelations.Select(x=>x)));
+            TestOutputHelper.WriteLine(string.Join(", ", synSet.LexicalRelations.Select(x => x)));
+            TestOutputHelper.WriteLine(string.Join(", ", synSet.SemanticRelations.Select(x => x)));
         }
     }
 }

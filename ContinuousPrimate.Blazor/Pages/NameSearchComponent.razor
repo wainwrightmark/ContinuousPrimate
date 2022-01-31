@@ -142,25 +142,15 @@
                 );
         }
 
-        if (_nounLookup is null)
+        if (_wordDict is null)
         {
-            var nouns = await _httpClient.GetStringAsync("./Data/Nouns.txt");
-            Console.WriteLine(DateTime.Now + ": Nouns Loaded");
-            _nounLookup = WordListHelper.MakeLookup(nouns);
-        }
-
-        if (_adjectiveLookup is null)
-        {
-            var adjectives = await _httpClient.GetStringAsync("./Data/Adjectives.txt");
-            Console.WriteLine(DateTime.Now + ": Adjectives Loaded");
-            _adjectiveLookup = WordListHelper.MakeLookup(adjectives);
+            _wordDict = await DataLoading.GetWordDict(_httpClient);
         }
     }
 
 
     private static Lazy<IEnumerable<(AnagramKey key, string name)>>? _firstNames;
-    private static Lazy<ILookup<AnagramKey, Word>>? _nounLookup;
-    private static Lazy<ILookup<AnagramKey, Word>>? _adjectiveLookup;
+    private static Lazy<WordDict>? _wordDict;
 
     
     private string _textValue = "";
@@ -219,7 +209,7 @@
 
     public async Task Search()
     {
-        if (!_isSearching && _firstNames is not null && _nounLookup is not null && _adjectiveLookup is not null)
+        if (!_isSearching && _firstNames is not null && _wordDict is not null)
         {
             HelperText = "Searching";
             _isSearching = true;
@@ -231,8 +221,7 @@
             var result =
                 _cache.GetOrAdd(TextValue, t => NameSearch.Search(t, 
                     _firstNames.Value,
-                    _nounLookup.Value,
-                    _adjectiveLookup.Value
+                    _wordDict.Value
                     ).Memoize());
 
             HelperText = "";

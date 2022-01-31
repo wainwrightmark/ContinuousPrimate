@@ -1,54 +1,76 @@
-﻿using System.Text;
+﻿using System.Diagnostics;
+using System.Text;
 using MoreLinq.Experimental;
+using WordDict = System.Collections.Generic.IReadOnlyDictionary<ContinuousPrimate.PartOfSpeech, System.Collections.Generic.IReadOnlyDictionary<ContinuousPrimate.AnagramKey, ContinuousPrimate.Word>>;
+
 namespace ContinuousPrimate;
+
+
 
 public record Word(string Text, string Gloss);
 
 
 public static class WordListHelper
 {
-    public static Lazy<ILookup<AnagramKey, Word>> MakeLookup(string data)
-    {
-        return
-            new Lazy<ILookup<AnagramKey, Word>>(() =>
-                {
-                    var result = data
-                        .Split('\n', StringSplitOptions.TrimEntries)
-                        .Select(Split)
-                        .ToLookup(x => x.Key, x => x.Word);
-
-                    Console.WriteLine(DateTime.Now + ": Lookup Created");
-
-                    return result;
-                }
-                );
-
-        static (AnagramKey Key, Word Word) Split(string s)
-        {
-            var terms = s.Split('\t');
-            var key = new AnagramKey(terms[0]);
-            var text = terms[1];
-            var gloss = terms[2];
-
-            return new ValueTuple<AnagramKey, Word>(key, new Word(text, gloss));
-        }
-    }
-
-    public static Lazy<IEnumerable<(AnagramKey key, string name)>> MakeEnumerable(string data)
+    public static Lazy<IEnumerable<(AnagramKey key, string name)>> CreateEnumerable(string data)
     {
         return new Lazy<IEnumerable<(AnagramKey key, string name)>>(()=>data
                 .Split('\n', StringSplitOptions.TrimEntries)
                 .Select(name => (AnagramKey.Create(name), name)).Memoize()
                 ) ;
     }
+
+    public static WordDict
+        CreateFullWordDictionary(string data)
+    {
+        var sw = Stopwatch.StartNew();
+
+        var dict = data.Split('\n', StringSplitOptions.RemoveEmptyEntries)
+            .Select(GetData)
+            .GroupBy(x => x.partOfSpeech)
+            .ToDictionary(x => x.Key
+                , x =>
+                    x.GroupBy(y=>y.anagramKey)
+                        
+                        
+                        .ToDictionary(y => y.Key, 
+                        y => y.First().word) as IReadOnlyDictionary<AnagramKey, Word>
+            );
+
+        Console.WriteLine(DateTime.Now + ": Word Dictionary Created " + sw.Elapsed);
+
+        return dict;
+
+
+        static (PartOfSpeech partOfSpeech, AnagramKey anagramKey, Word word) GetData(string line)
+        {
+            var terms = line.Split('\t', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+
+            var pos = GetPartOfSpeech(terms[0]);
+            var word = terms[1];
+            var key = new AnagramKey(terms[2]);
+            var gloss = terms[3];
+
+            return (pos, key, new Word(word, gloss));
+        }
+    }
+
+    public static PartOfSpeech GetPartOfSpeech(string s)
+    {
+        if (s == "n") return PartOfSpeech.Noun;
+        if (s == "j") return PartOfSpeech.Adjective;
+        if (s == "a") return PartOfSpeech.Adverb;
+        if (s == "v") return PartOfSpeech.Verb;
+        return PartOfSpeech.Other;
+    }
 }
 
 public static class NameSearch
 {
+    
     public static IEnumerable<PartialAnagram> Search(string name,
         IEnumerable<(AnagramKey key, string name)> firstNames,
-        ILookup<AnagramKey, Word> nounLookup,
-        ILookup<AnagramKey, Word> adjectiveLookup
+        WordDict wordDictionary
         )
     {
         if(string.IsNullOrWhiteSpace(name))
@@ -56,34 +78,33 @@ public static class NameSearch
 
         if (name.Contains(" ") || name.Length >= 15)
         {
-            return FindAnagrams(name, nounLookup, adjectiveLookup);
+            return FindAnagrams(name, wordDictionary);
         }
 
-        return FindNameAnagrams(name, firstNames, nounLookup, adjectiveLookup);
+        return FindNameAnagrams(name, firstNames, wordDictionary);
     }
     
 
     public static IEnumerable<PartialAnagram> FindAnagrams(
         string fullTerm,
-        ILookup<AnagramKey, Word> nouns,
-        ILookup<AnagramKey, Word> adjectives
+        WordDict wordDictionary
     )
     {
         var key = AnagramKey.CreateCareful(fullTerm);
         var originalTerms = fullTerm.Split(' ', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+        var adjectives = wordDictionary[PartOfSpeech.Adjective];
+        var nouns = wordDictionary[PartOfSpeech.Noun];
 
-        foreach (var adjective in adjectives)
+
+        foreach (var (adjectiveKey, adjective) in adjectives)
         {
-            var remainder = key.TrySubtract(adjective.Key);
+            var remainder = key.TrySubtract(adjectiveKey);
             if (remainder .HasValue)
             {
-
-                var noun = nouns[remainder.Value].FirstOrDefault();
-
-                if (noun is not null)
+                if (nouns.TryGetValue(remainder.Value, out var noun))
                 {
                     yield return new PartialAnagram(originalTerms,
-                        new List<Word>(){adjective.First(), noun}
+                        new List<Word>(){adjective, noun}
                     );
                 }
             }
@@ -94,29 +115,29 @@ public static class NameSearch
     public static IEnumerable<PartialAnagram> FindNameAnagrams(
         string mainWord,
         IEnumerable<(AnagramKey key, string word)> names,
-        ILookup<AnagramKey, Word> nouns,
-        ILookup<AnagramKey, Word> adjectives)
+        WordDict wordDictionary)
     {
         var mainKey = AnagramKey.CreateCareful(mainWord);
-        
+        var adjectives = wordDictionary[PartOfSpeech.Adjective];
+        var nouns = wordDictionary[PartOfSpeech.Noun];
+
+
         foreach (var (key, firstName) in names)
         {
             var combo = mainKey.Add(key);
-            foreach (var adjective in adjectives)
+            foreach (var  (adjectiveKey, adjective)  in adjectives)
             {
-                var remainder = combo.TrySubtract(adjective.Key);
+                var remainder = combo.TrySubtract(adjectiveKey);
                 if (remainder .HasValue)
                 {
-                    if(adjective.Key == mainKey)continue; //Best to do this check here - we get an extra subtraction but skip a bunch of checks
+                    if(adjectiveKey == mainKey)continue; //Best to do this check here - we get an extra subtraction but skip a bunch of checks
                     if(remainder.Value == mainKey)continue;
 
-                    var noun = nouns[remainder.Value].FirstOrDefault();
-
-                    if (noun is not null)
+                    if (nouns.TryGetValue(remainder.Value, out var noun))
                     {
                         yield return new PartialAnagram(
                             new List<string>(){firstName, mainWord},
-                            new List<Word>(){adjective.First(), noun}
+                            new List<Word>(){adjective, noun}
                         );
                         break; //now try a new name - it's dumb to have more than one anagram per name
                     }
