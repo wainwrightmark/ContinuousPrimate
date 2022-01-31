@@ -34,27 +34,34 @@
                     </td>
 
                     <td>
-                        <MudIconButton
-                            Link="@SocialHelpers.GetFacebookShareURL(row)"
-                            Icon="@Icons.Custom.Brands.Facebook"
-                            Title="Share on Facebook"
-                            Target="_blank"/>
-
-                        <MudIconButton
-                            Link="@SocialHelpers.GetTwitterShareUrl(row)"
-                            Icon="@Icons.Custom.Brands.Twitter"
-                            Title="Share on Twitter"
-                            Target="_blank"/>
                         
-                        <MudToggleIconButton
-                            Icon="@Icons.Filled.StarOutline"
-                            ToggledIcon="@Icons.Filled.Star"
-                            Title="Favourite"
-                            Toggled="@DatabaseWords.Contains(row)"
-                            ToggledChanged="b=>SetFavourite(b, row)"
-                        />
-
+                    <MudMenu Icon="@Icons.Filled.Menu" Dense="true" AnchorOrigin="Origin.TopLeft" TransformOrigin="Origin.TopRight">
+                        <MudMenuItem>
+                            <MudIconButton
+                                Link="@SocialHelpers.GetFacebookShareURL(row)"
+                                Icon="@Icons.Custom.Brands.Facebook"
+                                Title="Share on Facebook"
+                                Target="_blank"/>
+                        </MudMenuItem>
                         
+                        <MudMenuItem>
+                            <MudIconButton
+                                Link="@SocialHelpers.GetTwitterShareUrl(row)"
+                                Icon="@Icons.Custom.Brands.Twitter"
+                                Title="Share on Twitter"
+                                Target="_blank"/>
+                        </MudMenuItem>
+                        
+                        <MudMenuItem>
+                            <MudToggleIconButton
+                                Icon="@Icons.Filled.StarOutline"
+                                ToggledIcon="@Icons.Filled.Star"
+                                Title="Favourite"
+                                Toggled="@DatabaseWords.Contains(row)"
+                                ToggledChanged="b => SetFavourite(b, row)"/>
+                        </MudMenuItem>
+                    </MudMenu>
+
                     </td>
                 </tr>
             }
@@ -162,7 +169,7 @@
         get => _textValue;
         set
         {
-            _textValue = value;
+            _textValue = value.Trim();
             Search();
         }
     }
@@ -183,20 +190,16 @@
     public readonly HashSet<PartialAnagram> DatabaseWords = new();
 
 
-    
-
     public LoadedData? MyData
     {
         get
         {
             if (_isSearching) return null;
 
-            if (SearchData is not null && SearchData.Anagrams.Any()) return SearchData;
-            if (DatabaseWordsData is not null && DatabaseWordsData.Anagrams.Any()) return DatabaseWordsData;
+            if (!string.IsNullOrWhiteSpace(TextValue))
+                return SearchData;
 
-
-
-            return null;
+            return DatabaseWordsData;
         }
     }
 
