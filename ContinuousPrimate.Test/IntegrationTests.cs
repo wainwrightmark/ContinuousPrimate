@@ -5,6 +5,7 @@ using System.IO.Compression;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using FluentAssertions;
 using MoreLinq.Experimental;
 using WordNet;
 using Xunit;
@@ -31,10 +32,6 @@ public class IntegrationTests
         new(()=>
             WordListHelper.CreateFullWordDictionary(GetFullWordDictText())
             );
-        
-
-
-
 
 
     [Theory]
@@ -62,12 +59,22 @@ public class IntegrationTests
                 FullWordDict.Value
         ).Memoize();
 
+        results.Take(100).Count().Should().Be(100);
+
         foreach (var partialAnagram in results.Take(100))
         {
             TestOutputHelper.WriteLine(partialAnagram.ToString());
+            CheckValidity(partialAnagram);
         }
+        //TestOutputHelper.WriteLine($"{results.Count()} Names Found");
+    }
 
-        TestOutputHelper.WriteLine($"{results.Count()} Names Found");
+    private static void CheckValidity(PartialAnagram pa)
+    {
+        var terms = AnagramKey.CreateCareful(pa.TermsText);
+        var anagram = AnagramKey.CreateCareful(pa.AnagramText);
+
+        terms.Should().Be(anagram);
     }
 
     public static string GetFullWordDictText()

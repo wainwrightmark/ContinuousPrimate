@@ -61,63 +61,6 @@ namespace ContinuousPrimate.Test {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to able
-        ///unable
-        ///abaxial
-        ///dorsal
-        ///adaxial
-        ///ventral
-        ///acroscopic
-        ///basiscopic
-        ///abducent
-        ///abducting
-        ///adducent
-        ///adductive
-        ///adducting
-        ///nascent
-        ///emergent
-        ///emerging
-        ///dissilient
-        ///parturient
-        ///dying
-        ///moribund
-        ///last
-        ///abridged
-        ///cut
-        ///shortened
-        ///potted
-        ///unabridged
-        ///uncut
-        ///absolute
-        ///direct
-        ///implicit
-        ///unquestioning
-        ///infinite
-        ///living
-        ///relative
-        ///comparative
-        ///relational
-        ///absorbent
-        ///absorptive
-        ///absorbefacient
-        ///sorbefacient
-        ///assimilating
-        ///assimilative
-        ///assimilatory
-        ///hygroscopic
-        ///receptive
-        ///spongy
-        ///spongelike
-        ///thirsty
-        ///nonabsorbent        /// [rest of string was truncated]&quot;;.
-        /// </summary>
-        internal static string Adjectives {
-            get {
-                return ResourceManager.GetString("Adjectives", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Michael
         ///Christopher
         ///Jessica
@@ -184,76 +127,6 @@ namespace ContinuousPrimate.Test {
         internal static string Names {
             get {
                 return ResourceManager.GetString("Names", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to entity
-        ///abstraction
-        ///thing
-        ///object
-        ///whole
-        ///unit
-        ///congener
-        ///organism
-        ///being
-        ///benthos
-        ///dwarf
-        ///heterotroph
-        ///parent
-        ///life
-        ///biont
-        ///cell
-        ///cause
-        ///person
-        ///individual
-        ///someone
-        ///somebody
-        ///mortal
-        ///soul
-        ///animal
-        ///beast
-        ///brute
-        ///creature
-        ///fauna
-        ///plant
-        ///flora
-        ///native
-        ///substance
-        ///matter
-        ///food
-        ///nutrient
-        ///artifact
-        ///artefact
-        ///article
-        ///cognition
-        ///knowledge
-        ///noesis
-        ///motivation
-        ///motive
-        ///need
-        ///attribute
-        ///state
-        ///feeling
-        ///location
-        ///shape
-        ///form
-        ///time
-        ///space
-        ///infinite
-        ///event
-        ///process
-        ///act
-        ///deed
-        ///group
-        ///grouping
-        ///relation
-        ///possession
-        /// [rest of string was truncated]&quot;;.
-        /// </summary>
-        internal static string Nouns {
-            get {
-                return ResourceManager.GetString("Nouns", resourceCulture);
             }
         }
     }
