@@ -1,4 +1,5 @@
-﻿using WordDict = System.Collections.Generic.IReadOnlyDictionary<ContinuousPrimate.PartOfSpeech, System.Collections.Generic.IReadOnlyDictionary<ContinuousPrimate.AnagramKey, ContinuousPrimate.Word>>;
+﻿using System.Collections.Immutable;
+using WordDict = System.Collections.Generic.IReadOnlyDictionary<ContinuousPrimate.PartOfSpeech, System.Collections.Generic.IReadOnlyDictionary<ContinuousPrimate.AnagramKey, ContinuousPrimate.Word>>;
 
 namespace ContinuousPrimate;
 
@@ -24,27 +25,16 @@ public static class NameSearch
 
     public static IEnumerable<PartialAnagram> FindAnagrams(
         string fullTerm,
-        WordDict wordDictionary
-    )
+        WordDict wordDictionary)
     {
         var key = AnagramKey.CreateCareful(fullTerm);
         var originalTerms = fullTerm.Split(' ', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
-        var adjectives = wordDictionary[PartOfSpeech.Adjective];
-        var nouns = wordDictionary[PartOfSpeech.Noun];
 
+        var anagrams = SearchNode.Default.FindAnagrams(originalTerms, key, ImmutableList<Word>.Empty, wordDictionary);
 
-        foreach (var (adjectiveKey, adjective) in adjectives)
+        foreach (var partialAnagram in anagrams)
         {
-            var remainder = key.TrySubtract(adjectiveKey);
-            if (remainder .HasValue)
-            {
-                if (nouns.TryGetValue(remainder.Value, out var noun))
-                {
-                    yield return new PartialAnagram(originalTerms,
-                        new List<Word>(){adjective, noun}
-                    );
-                }
-            }
+            yield return partialAnagram;
         }
     }
 
@@ -55,31 +45,19 @@ public static class NameSearch
         WordDict wordDictionary)
     {
         var mainKey = AnagramKey.CreateCareful(mainWord);
-        var adjectives = wordDictionary[PartOfSpeech.Adjective];
-        var nouns = wordDictionary[PartOfSpeech.Noun];
-
+        var originalTerms = ImmutableList<string>.Empty.Add(mainWord);
 
         foreach (var (key, firstName) in names)
         {
-            var combo = mainKey.Add(key);
-            foreach (var  (adjectiveKey, adjective)  in adjectives)
-            {
-                var remainder = combo.TrySubtract(adjectiveKey);
-                if (remainder .HasValue)
-                {
-                    if(adjectiveKey == mainKey)continue; //Best to do this check here - we get an extra subtraction but skip a bunch of checks
-                    if(remainder.Value == mainKey)continue;
+            var combo = mainKey .Add(key);
+            var terms = originalTerms.Insert(0, firstName);
 
-                    if (nouns.TryGetValue(remainder.Value, out var noun))
-                    {
-                        yield return new PartialAnagram(
-                            new List<string>(){firstName, mainWord},
-                            new List<Word>(){adjective, noun}
-                        );
-                        break; //now try a new name - it's dumb to have more than one anagram per name
-                    }
-                }
-            }
+            var anagrams = SearchNode.Default.FindAnagrams(terms,
+                combo, ImmutableList<Word>.Empty, 
+                wordDictionary).Take(1);
+
+            foreach (var partialAnagram in anagrams)
+                yield return partialAnagram;
             
         }
     }

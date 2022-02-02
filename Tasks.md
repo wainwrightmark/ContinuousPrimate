@@ -5,6 +5,8 @@
 - [x] Add general anagram feature
 - [x] Add paging
 - [ ] Add SVG animations
-- [ ] Store favourites
-- [ ] Add definitions
-- [ ] Fix issue with paging
+- [x] Store favourites
+- [x] Add definitions
+- [x] Fix issue with paging
+- [x] Include other types of phrases (e.g. articles)
+- [ ] Emoji

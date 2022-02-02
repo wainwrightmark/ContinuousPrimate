@@ -1,3 +1,3 @@
 ﻿namespace ContinuousPrimate;
 
-public record Word(string Text, string Gloss);
+public record Word(string Text, string Gloss, PartOfSpeech PartOfSpeech);

@@ -19,7 +19,7 @@ public static class WordListHelper
 
         var dict = data.Split('\n', StringSplitOptions.RemoveEmptyEntries)
             .Select(GetData)
-            .GroupBy(x => x.partOfSpeech)
+            .GroupBy(x => x.word.PartOfSpeech)
             .ToDictionary(x => x.Key
                 , x =>
                     x.GroupBy(y=>y.anagramKey)
@@ -34,7 +34,7 @@ public static class WordListHelper
         return dict;
 
 
-        static (PartOfSpeech partOfSpeech, AnagramKey anagramKey, Word word) GetData(string line)
+        static (AnagramKey anagramKey, Word word) GetData(string line)
         {
             var terms = line.Split('\t', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
 
@@ -43,7 +43,7 @@ public static class WordListHelper
             var key = new AnagramKey(terms[2]);
             var gloss = terms[3];
 
-            return (pos, key, new Word(word, gloss));
+            return (key, new Word(word, gloss, pos));
         }
     }
 

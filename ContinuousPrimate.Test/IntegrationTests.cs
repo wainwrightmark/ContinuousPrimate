@@ -33,23 +33,38 @@ public class IntegrationTests
             WordListHelper.CreateFullWordDictionary(GetFullWordDictText())
             );
 
+    [Theory]
+    [InlineData("Wainwright", "wily nightWalker") ]
+    [InlineData("Angela Curran", "A nuclear gran") ]
+    [InlineData("Stephanie Cheung", "An ensuing peach") ]
+
+    public void TestResultsContains(string fulltext, string expected)
+    {
+        var results =
+            NameSearch.Search(fulltext,
+                FirstNames.Value,
+                FullWordDict.Value
+            ).Take(100);
+
+        results.Select(x => x.AnagramText).Should().Contain(expected);
+    }
 
     [Theory]
-    [InlineData("beckham")]
-    [InlineData("wainwright")]
-    [InlineData("cheung")]
-    [InlineData("scaysbrooke")]
-    [InlineData("walker")]
-    [InlineData("taylor")]
-    [InlineData("johnson")]
-    [InlineData("steverink")]
-    [InlineData("curran")]
-    [InlineData("onipko")]
-    [InlineData("gumbel")]
-    [InlineData("mote")]
-    [InlineData("loake")]
-    [InlineData("badenas")]
-    [InlineData("thomas")]
+    [InlineData("Beckham")]
+    [InlineData("Wainwright")]
+    [InlineData("Cheung")]
+    [InlineData("Scaysbrooke")]
+    [InlineData("Walker")]
+    [InlineData("Taylor")]
+    [InlineData("Johnson")]
+    [InlineData("Steverink")]
+    [InlineData("Curran")]
+    [InlineData("Onipko")]
+    [InlineData("Gumbel")]
+    [InlineData("Mote")]
+    [InlineData("Loake")]
+    [InlineData("Badenas")]
+    [InlineData("Thomas")]
     public void TestSearch(string mainName)
     {
 
