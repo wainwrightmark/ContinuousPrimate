@@ -3,10 +3,10 @@
 @inject Blazored.LocalStorage.ILocalStorageService _localStorage
 
 <MudContainer MaxWidth="MaxWidth.Small" Style="padding-left: 0; padding-right: 0;">
-    
+
     <MudTextField
         @bind-Value="TextValue"
-        Label="Name"
+        Label="Search"
         HelperText="@HelperText"
         Variant="Variant.Text"
         Clearable="true" Disabled="@_isSearching"/>
@@ -20,8 +20,14 @@
             {
                 <tr>
                     <td>
-                        <MudText>@row.TermsText</MudText>
-                        
+                        @foreach (var word in @row.OriginalTerms)
+                        {
+                            <MudTooltip Arrow="true" Text="@word.Gloss">
+                                <MudText>@word.Text </MudText>
+                            </MudTooltip>
+                            <MudElement> </MudElement>
+                        }
+
                     </td>
                     <td>
                         @foreach (var word in @row.AnagramWords)
@@ -34,33 +40,33 @@
                     </td>
 
                     <td>
-                        
-                    <MudMenu Icon="@Icons.Filled.Menu" Dense="true" AnchorOrigin="Origin.TopLeft" TransformOrigin="Origin.TopRight">
-                        <MudMenuItem>
-                            <MudIconButton
-                                Link="@SocialHelpers.GetFacebookShareURL(row)"
-                                Icon="@Icons.Custom.Brands.Facebook"
-                                Title="Share on Facebook"
-                                Target="_blank"/>
-                        </MudMenuItem>
-                        
-                        <MudMenuItem>
-                            <MudIconButton
-                                Link="@SocialHelpers.GetTwitterShareUrl(row)"
-                                Icon="@Icons.Custom.Brands.Twitter"
-                                Title="Share on Twitter"
-                                Target="_blank"/>
-                        </MudMenuItem>
-                        
-                        <MudMenuItem>
-                            <MudToggleIconButton
-                                Icon="@Icons.Filled.StarOutline"
-                                ToggledIcon="@Icons.Filled.Star"
-                                Title="Favourite"
-                                Toggled="@DatabaseWords.Contains(row)"
-                                ToggledChanged="b => SetFavourite(b, row)"/>
-                        </MudMenuItem>
-                    </MudMenu>
+
+                        <MudMenu Icon="@Icons.Filled.Menu" Dense="true" AnchorOrigin="Origin.TopLeft" TransformOrigin="Origin.TopRight">
+                            <MudMenuItem>
+                                <MudIconButton
+                                    Link="@SocialHelpers.GetFacebookShareURL(row)"
+                                    Icon="@Icons.Custom.Brands.Facebook"
+                                    Title="Share on Facebook"
+                                    Target="_blank"/>
+                            </MudMenuItem>
+
+                            <MudMenuItem>
+                                <MudIconButton
+                                    Link="@SocialHelpers.GetTwitterShareUrl(row)"
+                                    Icon="@Icons.Custom.Brands.Twitter"
+                                    Title="Share on Twitter"
+                                    Target="_blank"/>
+                            </MudMenuItem>
+
+                            <MudMenuItem>
+                                <MudToggleIconButton
+                                    Icon="@Icons.Filled.StarOutline"
+                                    ToggledIcon="@Icons.Filled.Star"
+                                    Title="Favourite"
+                                    Toggled="@DatabaseWords.Contains(row)"
+                                    ToggledChanged="b => SetFavourite(b, row)"/>
+                            </MudMenuItem>
+                        </MudMenu>
 
                     </td>
                 </tr>
@@ -68,15 +74,13 @@
             </tbody>
 
         </MudSimpleTable>
-
-        
     }
     else
     {
         <MudSkeleton Style="margin-top: 50px" SkeletonType="SkeletonType.Rectangle" Width="100%" Height="450px"/>
     }
-    
-    
+
+
     <MudToolBar>
         <MudIconButton
             Link="https://github.com/wainwrightmark/ContinuousPrimate"
@@ -119,12 +123,12 @@
 
     private async Task LoadDatabaseWords()
     {
-        var data = await _localStorage.GetItemAsync<List<PartialAnagram>>(SavedWordsKey)?? new List<PartialAnagram>();
+        var data = await _localStorage.GetItemAsync<List<PartialAnagram>>(SavedWordsKey) ?? new List<PartialAnagram>();
 
         DatabaseWords.UnionWith(data);
 
         Console.WriteLine($"{DatabaseWords.Count} Database Words Found");
-        
+
         DatabaseWordsData = new LoadedData(DatabaseWords);
         StateHasChanged();
     }
@@ -139,8 +143,9 @@
 
     private static Lazy<WordDict>? _wordDict;
 
-    
+
     private string _textValue = "";
+
     public string TextValue
     {
         get => _textValue;
@@ -154,13 +159,13 @@
 
     public async Task RemoveDatabaseWord(PartialAnagram pa)
     {
-        if(DatabaseWords.Remove(pa))
+        if (DatabaseWords.Remove(pa))
             await _localStorage.SetItemAsync(SavedWordsKey, DatabaseWords.ToList());
     }
-    
+
     public async Task AddDatabaseWord(PartialAnagram pa)
     {
-        if(DatabaseWords.Add(pa))
+        if (DatabaseWords.Add(pa))
             await _localStorage.SetItemAsync(SavedWordsKey, DatabaseWords.ToList());
     }
 
@@ -223,6 +228,6 @@
     private readonly ConcurrentDictionary<string, IEnumerable<PartialAnagram>> _cache = new();
 
 
-    
+
 
 }

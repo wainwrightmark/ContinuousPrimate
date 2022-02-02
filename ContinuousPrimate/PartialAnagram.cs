@@ -1,11 +1,11 @@
 ﻿namespace ContinuousPrimate;
 
-public record PartialAnagram(IReadOnlyList<string> OriginalTerms, IReadOnlyList<Word> AnagramWords)
+public record PartialAnagram(IReadOnlyList<Word> OriginalTerms, IReadOnlyList<Word> AnagramWords)
 {
     /// <inheritdoc />
     public override string ToString() => Data;
 
-    public string TermsText => string.Join(" ", OriginalTerms);
+    public string TermsText => string.Join(" ", OriginalTerms.Select(x=>x.Text));
     public string AnagramText => string.Join(" ", AnagramWords.Select(x => x.Text));
 
     public string Data =>TermsText + " = " + AnagramText;

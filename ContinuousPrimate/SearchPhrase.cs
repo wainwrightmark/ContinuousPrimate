@@ -4,7 +4,7 @@ public record NormalSearchPhrase
     (ImmutableList<PhraseComponent> Components, ImmutableList<int> Indexes) : SearchPhrase(Components)
 {
     /// <inheritdoc />
-    public override PartialAnagram TryMake(IReadOnlyList<string> originalTerms, ImmutableList<Word> wordsSoFar)
+    public override PartialAnagram TryMake(IReadOnlyList<Word> originalTerms, ImmutableList<Word> wordsSoFar)
     {
         var words = Indexes.Select(i => wordsSoFar[i]).ToList();
         return new PartialAnagram(originalTerms, words);
@@ -13,12 +13,12 @@ public record NormalSearchPhrase
 
 public abstract record SearchPhrase(ImmutableList<PhraseComponent> Components) : SearchNode
 {
-    public abstract PartialAnagram? TryMake(IReadOnlyList<string> originalTerms, ImmutableList<Word> wordsSoFar);
+    public abstract PartialAnagram? TryMake(IReadOnlyList<Word> originalTerms, ImmutableList<Word> wordsSoFar);
 
     /// <summary>
     /// Check that the words match the components
     /// </summary>
-    public virtual bool CheckWords(IReadOnlyList<string> originalTerms, ImmutableList<Word> words)
+    public virtual bool CheckWords(IReadOnlyList<Word> originalTerms, ImmutableList<Word> words)
     {
         if (words.Count != Components.Count) return false;
 
@@ -27,14 +27,14 @@ public abstract record SearchPhrase(ImmutableList<PhraseComponent> Components) :
             if (!second.IsValidWord(first)) return false;
         }
 
-        if (originalTerms.Intersect(words.Select(x => x.Text), StringComparer.OrdinalIgnoreCase).Any())//Don't allow duplicate words
+        if (originalTerms.Select(x=>x.Text).Intersect(words.Select(x => x.Text), StringComparer.OrdinalIgnoreCase).Any())//Don't allow duplicate words
             return false;
 
         return true;
     }
 
     /// <inheritdoc />
-    public override IEnumerable<PartialAnagram> FindAnagrams(IReadOnlyList<string> originalTerms,
+    public override IEnumerable<PartialAnagram> FindAnagrams(IReadOnlyList<Word> originalTerms,
         AnagramKey remainingKey, ImmutableList<Word> wordsSoFar, WordDict wordDict)
     {
         if (remainingKey.IsEmpty())
@@ -164,7 +164,7 @@ public abstract record PhraseComponent
 
 public record ParentNode(ImmutableList<SearchNode> NextNodes) : SearchNode
 {
-    public override IEnumerable<PartialAnagram> FindAnagrams(IReadOnlyList<string> originalTerms,
+    public override IEnumerable<PartialAnagram> FindAnagrams(IReadOnlyList<Word> originalTerms,
         AnagramKey remainingKey, ImmutableList<Word> wordsSoFar,
         WordDict wordDict) =>
         NextNodes
@@ -176,7 +176,7 @@ public record ComponentNode(PhraseComponent Component, SearchNode Child) : Searc
 {
 
     /// <inheritdoc />
-    public override IEnumerable<PartialAnagram> FindAnagrams(IReadOnlyList<string> originalTerms,
+    public override IEnumerable<PartialAnagram> FindAnagrams(IReadOnlyList<Word> originalTerms,
         AnagramKey remainingKey, ImmutableList<Word> wordsSoFar, WordDict wordDict)
     {
 
@@ -199,7 +199,7 @@ public abstract record SearchNode
     public static SearchNode Name { get; } = CreateGraph(SearchPhrases.Name.ToList(), 0);
 
     
-    public abstract IEnumerable<PartialAnagram> FindAnagrams(IReadOnlyList<string> originalTerms,
+    public abstract IEnumerable<PartialAnagram> FindAnagrams(IReadOnlyList<Word> originalTerms,
         AnagramKey remainingKey, ImmutableList<Word> wordsSoFar, WordDict wordDict);
 
     public static SearchNode CreateGraph(IReadOnlyList<SearchPhrase> phrases, int level)

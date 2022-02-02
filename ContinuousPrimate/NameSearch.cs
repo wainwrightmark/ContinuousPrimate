@@ -2,21 +2,6 @@
 
 public static class NameSearch
 {
-    public static WordType? TryGetWordType(this WordDict wordDict, string text)
-    {
-        var key = AnagramKey.CreateCareful(text);
-        foreach (var (wordType, lookup) in wordDict.Tables)
-        {
-            if (lookup.Lookup[key].Select(x=>x.Text).Contains(text, StringComparer.OrdinalIgnoreCase))
-            {
-                return wordType;
-            }
-        }
-
-        return null;
-    }
-
-
     public static (WordType wordType, bool comesFirst, SearchNode searchNode) GetSearchSettings(this WordType wordType)
     {
         return wordType switch
@@ -25,7 +10,7 @@ public static class NameSearch
             WordType.Adjective => (WordType.Noun, false, SearchNode.Name),
             WordType.Verb => (WordType.Adverb, false, SearchNode.Name),
             WordType.Adverb => (WordType.Verb, true, SearchNode.Name),
-            WordType.Other => (WordType.Noun, false, SearchNode.Name), //Not sure what to do here
+            WordType.Other => (WordType.FirstName, false, SearchNode.Default), //Assume this was a last name
             WordType.FirstName => (WordType.LastName, false, SearchNode.Default),
             WordType.LastName => (WordType.FirstName, true, SearchNode.Default),
             _ => throw new ArgumentOutOfRangeException(nameof(wordType), wordType, null)
@@ -33,32 +18,53 @@ public static class NameSearch
     }
 
     
-    public static IEnumerable<PartialAnagram> Search(string name,
+    public static IEnumerable<PartialAnagram> Search(string text,
         WordDict wordDictionary)
     {
-        if(string.IsNullOrWhiteSpace(name))
-            return ArraySegment<PartialAnagram>.Empty;
+        var words = GetWords(text, wordDictionary);
+        if(words.Count == 0)return ArraySegment<PartialAnagram>.Empty;
 
-        if (name.Contains(' ') || name.Length >= 15)
+        if (words.Count == 1)
         {
-            return FindAnagrams(name, wordDictionary, SearchNode.Default);
+            var (otherWordType, otherWordComesFirst, searchNode) = GetSearchSettings(words.Single().WordType);
+            return FindTwoWordAnagrams(words.Single(), otherWordType, otherWordComesFirst, wordDictionary, searchNode);
         }
 
-        var wordType = TryGetWordType(wordDictionary, name)?? WordType.LastName;
-        var (otherWordType, otherWordComesFirst, searchNode) = GetSearchSettings(wordType);
-
-        return FindTwoWordAnagrams(name, otherWordType, otherWordComesFirst, wordDictionary, searchNode);
+        return FindAnagrams(words, wordDictionary, SearchNode.Default);
     }
-    
+
+    public static IReadOnlyList<Word> GetWords(string text, WordDict wordDict)
+    {
+        var terms = text.Split(' ', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+
+        var words = terms.Select(x => GetWord(wordDict, x)).ToList();
+
+        return words;
+
+        static Word GetWord(WordDict wordDict, string text)
+        {
+            var key = AnagramKey.CreateCareful(text);
+            foreach (var (wordType, lookup) in wordDict.Tables)
+            {
+                var match = lookup.Lookup[key]
+                    .FirstOrDefault(x => x.Text.Equals(text, StringComparison.OrdinalIgnoreCase));
+
+                if (match is not null) return match;
+            }
+
+            return new Word(text, "", WordType.Other);
+        }
+
+    }
 
     public static IEnumerable<PartialAnagram> FindAnagrams(
-        string fullTerm,
+        IReadOnlyList<Word> words,
         WordDict wordDictionary, SearchNode searchNode)
     {
-        var key = AnagramKey.CreateCareful(fullTerm);
-        var originalTerms = fullTerm.Split(' ', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+        var key = AnagramKey.CreateCareful(string.Join("", words.Select(x=>x.Text)));
+        
 
-        var anagrams = searchNode.FindAnagrams(originalTerms, key, ImmutableList<Word>.Empty, wordDictionary);
+        var anagrams = searchNode.FindAnagrams(words, key, ImmutableList<Word>.Empty, wordDictionary);
 
         foreach (var partialAnagram in anagrams)
         {
@@ -68,13 +74,13 @@ public static class NameSearch
 
 
     public static IEnumerable<PartialAnagram> FindTwoWordAnagrams(
-        string mainWord,
+        Word mainWord,
         WordType secondWordType,
         bool secondWordGoesFirst,
         WordDict wordDictionary, SearchNode searchNode)
     {
-        var mainKey = AnagramKey.CreateCareful(mainWord);
-        var originalTerms = ImmutableList<string>.Empty.Add(mainWord);
+        var mainKey = AnagramKey.CreateCareful(mainWord.Text);
+        var originalTerms = ImmutableList<Word>.Empty.Add(mainWord);
 
 
         foreach (var (secondWordKey, secondWord) in wordDictionary.Tables[secondWordType].List)
@@ -82,8 +88,8 @@ public static class NameSearch
             var combo = mainKey .Add(secondWordKey);
             var terms =
                 secondWordGoesFirst?
-                    originalTerms.Insert(0, secondWord.Text) :
-                    originalTerms.Add(secondWord.Text);
+                    originalTerms.Insert(0, secondWord) :
+                    originalTerms.Add(secondWord);
 
             var anagrams = searchNode.FindAnagrams(terms,
                 combo, ImmutableList<Word>.Empty, 
