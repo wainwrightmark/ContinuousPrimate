@@ -3,13 +3,42 @@
 @inject Blazored.LocalStorage.ILocalStorageService _localStorage
 
 <MudContainer MaxWidth="MaxWidth.Small" Style="padding-left: 0; padding-right: 0;">
+    
+    <MudButtonGroup>
+        <MudTextField
+            @ref="_searchField"
+            @bind-Value="TextValue"
+            Label="Search"
+            HelperText="@HelperText"
+            Variant="Variant.Text"
+            Clearable="true" Disabled="@_isSearching"/>
+        <MudIconButton Icon="@SearchTypeIcon" OnClick="@ToggleSearchType" Title="@SearchType.ToString()"/>
+    
+        
+        <MudSelect T="WordType" 
+                   Dense="true" 
+                   @bind-Value="OtherWordType"
+                   Strict="true"
+                   Label="@(SearchType == SearchType.Dynamic? "" : "Other Word")" 
+                   Disabled="@(SearchType == SearchType.Dynamic)"
+                   ReadOnly="@(SearchType == SearchType.Dynamic)">
 
-    <MudTextField
-        @bind-Value="TextValue"
-        Label="Search"
-        HelperText="@HelperText"
-        Variant="Variant.Text"
-        Clearable="true" Disabled="@_isSearching"/>
+            @foreach (var item in Enum.GetValues<WordType>())
+            {
+                @if (@item == WordType.Other)
+                {
+                    <MudSelectItem Value="@item"><MudElement></MudElement></MudSelectItem>
+                }
+                else
+                {
+                    <MudSelectItem Value="@item">@item</MudSelectItem>
+                }
+            }
+        </MudSelect>
+
+    </MudButtonGroup>
+
+    
 
     @if (MyData is not null)
     {
@@ -108,15 +137,25 @@
 
 @code{
 
+    private MudTextField<string> _searchField;
+
     /// <inheritdoc />
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
 
         Console.WriteLine(DateTime.Now + ": Component Initialized");
-
+        
         await LoadWordData();
         await LoadDatabaseWords();
+    }
+
+    /// <inheritdoc />
+    protected override async Task OnParametersSetAsync()
+    {
+        await base.OnParametersSetAsync();
+
+        await _searchField.FocusAsync();
     }
 
         private const string SavedWordsKey = "ContinuousPrimateSavedAnagrams";
@@ -198,6 +237,51 @@
         else return RemoveDatabaseWord(anagram);
     }
 
+    public void ToggleSearchType()
+    {
+        SearchType = SearchType switch
+        {
+            SearchType.Dynamic => SearchType.Name,
+            SearchType.Name => SearchType.Phrase,
+            SearchType.Phrase => SearchType.Dynamic,
+            _ => SearchType
+            };
+        if (SearchType == SearchType.Dynamic)
+            OtherWordType = WordType.Other;
+
+        Search();
+    }
+
+    public string SearchTypeIcon
+    {
+        get
+        {
+            return SearchType switch
+            {
+                SearchType.Dynamic => Icons.Filled.AutoAwesome,
+                SearchType.Name => Icons.Filled.Person,
+                SearchType.Phrase => Icons.Filled.EmojiObjects,
+                _ => Icons.Filled.AutoAwesome
+                };
+        }
+    }
+
+    public SearchType SearchType { get; set; } = SearchType.Dynamic;
+    private WordType _otherWordType = WordType.Other;
+
+    public WordType OtherWordType
+    {
+        get => _otherWordType;
+        set
+        {
+            if (_otherWordType != value)
+            {
+                _otherWordType = value;
+                Search();
+            }
+        }
+    }
+
     public string HelperText = "Type your last name (or whatever)";
 
     private bool _isSearching;
@@ -214,8 +298,13 @@
             await Task.Delay(1);
 
             var result =
-                _cache.GetOrAdd(TextValue, t => NameSearch.Search(t,
-                    _wordDict.Value
+                _cache.GetOrAdd(
+                    (TextValue, SearchType, OtherWordType)
+                    
+                    , t => NameSearch.Search(t.text,
+                    t.searchType,
+                    t.wordType,
+            _wordDict.Value
                     ).Memoize());
 
             HelperText = "";
@@ -225,7 +314,7 @@
         }
     }
 
-    private readonly ConcurrentDictionary<string, IEnumerable<PartialAnagram>> _cache = new();
+    private readonly ConcurrentDictionary<(string text, SearchType searchType, WordType wordType), IEnumerable<PartialAnagram>> _cache = new();
 
 
 

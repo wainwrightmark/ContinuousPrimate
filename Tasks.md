@@ -11,6 +11,6 @@
 - [x] Include other types of phrases (e.g. articles)
 - [ ] Emoji
 - [x] Dynamically gues the type of anagram
-- [ ] Word types for everything
-- [ ] Let user choose the type of anagram
+- [x] Word types for everything
+- [x] Let user choose the type of anagram
 - [ ] Keep track of phrase lengths

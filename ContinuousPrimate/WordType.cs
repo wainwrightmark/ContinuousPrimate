@@ -2,11 +2,13 @@
 
 public enum WordType
 {
+    Other, //o
+
     Noun,//n
     Adjective,//j
     Verb,//v
     Adverb,//a
-    Other, //o
+    
 
     FirstName, //f
     LastName //l

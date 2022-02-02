@@ -195,7 +195,7 @@ public record ComponentNode(PhraseComponent Component, SearchNode Child) : Searc
 
 public abstract record SearchNode
 {
-    public static SearchNode Default { get; } = CreateGraph(SearchPhrases.Default.ToList(), 0);
+    public static SearchNode Phrase { get; } = CreateGraph(SearchPhrases.Default.ToList(), 0);
     public static SearchNode Name { get; } = CreateGraph(SearchPhrases.Name.ToList(), 0);
 
     

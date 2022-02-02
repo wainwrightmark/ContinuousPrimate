@@ -30,6 +30,7 @@ public class IntegrationTests
     {
         var results =
             NameSearch.Search(fulltext,
+                SearchType.Dynamic, WordType.Other,
                 FullWordDict.Value
             ).Take(100);
 
@@ -58,6 +59,7 @@ public class IntegrationTests
     {
         var results =
         NameSearch.Search(mainName,
+            SearchType.Dynamic, WordType.Other,
             FullWordDict.Value
         ).Memoize();
 
