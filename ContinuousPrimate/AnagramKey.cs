@@ -1,4 +1,4 @@
-﻿using System.Text;
+﻿
 
 namespace ContinuousPrimate;
 
@@ -16,7 +16,7 @@ public readonly record struct AnagramKey(string Text)
     public static AnagramKey CreateCareful(string s)
         => new(new string(s.Trim().ToLowerInvariant().Where(char.IsLetter).OrderBy(x => x).ToArray()));
 
-    public bool IsEmpty => Text.Length == 0;
+    public bool IsEmpty() => Text.Length == 0;
 
     public static AnagramKey Empty { get; } = new ("");
 

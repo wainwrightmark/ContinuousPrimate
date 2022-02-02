@@ -12,10 +12,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Remove="wwwroot\Data\Names.txt" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="Blazored.LocalStorage" Version="4.1.5" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="6.0.1" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="6.0.1" PrivateAssets="all" />
@@ -24,12 +20,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ContinuousPrimate\ContinuousPrimate.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="wwwroot\Data\Names.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
   </ItemGroup>
 
   <ItemGroup>
@@ -54,6 +44,13 @@
     <Content Update="wwwroot\Data\WordData.gzip">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Update="wwwroot\Data\WordData1.gzip">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="wwwroot\Data\" />
   </ItemGroup>
 
 </Project>

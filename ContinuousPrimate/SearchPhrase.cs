@@ -1,16 +1,10 @@
-﻿using System.Collections.Immutable;
-using WordDict =
-    System.Collections.Generic.IReadOnlyDictionary<ContinuousPrimate.PartOfSpeech, System.Collections.Generic.
-        IReadOnlyDictionary<ContinuousPrimate.AnagramKey, ContinuousPrimate.Word>>;
-
-
-namespace ContinuousPrimate;
+﻿namespace ContinuousPrimate;
 
 public record NormalSearchPhrase
     (ImmutableList<PhraseComponent> Components, ImmutableList<int> Indexes) : SearchPhrase(Components)
 {
     /// <inheritdoc />
-    public override PartialAnagram? TryMake(IReadOnlyList<string> originalTerms, ImmutableList<Word> wordsSoFar)
+    public override PartialAnagram TryMake(IReadOnlyList<string> originalTerms, ImmutableList<Word> wordsSoFar)
     {
         var words = Indexes.Select(i => wordsSoFar[i]).ToList();
         return new PartialAnagram(originalTerms, words);
@@ -43,7 +37,7 @@ public abstract record SearchPhrase(ImmutableList<PhraseComponent> Components) :
     public override IEnumerable<PartialAnagram> FindAnagrams(IReadOnlyList<string> originalTerms,
         AnagramKey remainingKey, ImmutableList<Word> wordsSoFar, WordDict wordDict)
     {
-        if (remainingKey.IsEmpty)
+        if (remainingKey.IsEmpty())
         {
             if (!CheckWords(originalTerms, wordsSoFar))
                 yield break;
@@ -56,7 +50,7 @@ public abstract record SearchPhrase(ImmutableList<PhraseComponent> Components) :
 }
 
 public record IndefiniteArticleAComponent(int NextWordIndex) : FixedStringComponent(new Word("A",
-    "Signifying one or any, but less emphatically.", PartOfSpeech.Other))
+    "Signifying one or any, but less emphatically.", WordType.Other))
 {
     /// <inheritdoc />
     public override bool AllowPrecedingNodes(ImmutableList<Word> wordsSoFar)
@@ -68,12 +62,12 @@ public record IndefiniteArticleAComponent(int NextWordIndex) : FixedStringCompon
     {
         'a', 'e', 'i', 'o', 'u',
         'A', 'E', 'I', 'O', 'U', 
-        'h', 'H'//For this, H is a vowel
+        //Do not include 'H'
     };
 }
 
 public record IndefiniteArticleAnComponent(int NextWordIndex) : FixedStringComponent(new Word("An",
-    "Signifying one or any, but less emphatically.", PartOfSpeech.Other))
+    "Signifying one or any, but less emphatically.", WordType.Other))
 {
     /// <inheritdoc />
     public override bool AllowPrecedingNodes(ImmutableList<Word> wordsSoFar)
@@ -121,10 +115,10 @@ public record FixedStringComponent(AnagramKey Key, Word Word) : PhraseComponent
     }
 }
 
-public record WordComponent(PartOfSpeech PartOfSpeech) : PhraseComponent
+public record WordComponent(WordType WordType) : PhraseComponent
 {
     /// <inheritdoc />
-    public override bool IsValidWord(Word word) => word.PartOfSpeech == PartOfSpeech;
+    public override bool IsValidWord(Word word) => word.WordType == WordType;
 
     /// <inheritdoc />
     public override bool AllowPrecedingNodes(ImmutableList<Word> wordsSoFar) => true;
@@ -135,15 +129,18 @@ public record WordComponent(PartOfSpeech PartOfSpeech) : PhraseComponent
     {
         if (useWholeKey)
         {
-            if (wordDict[PartOfSpeech].TryGetValue(remainingKey, out var w))
+
+            foreach (var w in wordDict.Tables[WordType].Lookup[remainingKey])
+            {
                 yield return (AnagramKey.Empty, w);
+            }
         }
         else
         {
             if (remainingKey.Text.Length > 3) //Ignore words shorter than three letters
             {
                 //This is the slow bit
-                foreach (var (anagramKey, word) in wordDict[PartOfSpeech])
+                foreach (var (anagramKey, word) in wordDict.Tables[WordType].List)
                 {
                     var sub = remainingKey.TrySubtract(anagramKey);
                     if (sub is not null) yield return (sub.Value, word);
@@ -199,6 +196,7 @@ public record ComponentNode(PhraseComponent Component, SearchNode Child) : Searc
 public abstract record SearchNode
 {
     public static SearchNode Default { get; } = CreateGraph(SearchPhrases.Default.ToList(), 0);
+    public static SearchNode Name { get; } = CreateGraph(SearchPhrases.Name.ToList(), 0);
 
     
     public abstract IEnumerable<PartialAnagram> FindAnagrams(IReadOnlyList<string> originalTerms,
@@ -234,59 +232,69 @@ public abstract record SearchNode
 public static class SearchPhrases
 {
 
+    public static IEnumerable<SearchPhrase> Name
+    {
+        get
+        {
+            yield return new NormalSearchPhrase(
+                new PhraseComponent[] { new WordComponent(WordType.LastName), new WordComponent(WordType.FirstName) }.ToImmutableList(),
+                new List<int>() { 1, 0 }.ToImmutableList());
+        }
+    }
+
     public static IEnumerable<SearchPhrase> Default
     {
         get
         {
             yield return new NormalSearchPhrase(
-                new PhraseComponent[] { new WordComponent(PartOfSpeech.Adjective), new WordComponent(PartOfSpeech.Noun) }.ToImmutableList(),
+                new PhraseComponent[] { new WordComponent(WordType.Adjective), new WordComponent(WordType.Noun) }.ToImmutableList(),
                 new List<int>() { 0, 1 }.ToImmutableList());
 
             yield return
                 new NormalSearchPhrase(
                     new PhraseComponent[]{
-                        new WordComponent(PartOfSpeech.Adjective),
+                        new WordComponent(WordType.Adjective),
                         new IndefiniteArticleAnComponent(0),
-                        new WordComponent(PartOfSpeech.Noun)}.ToImmutableList(),
+                        new WordComponent(WordType.Noun)}.ToImmutableList(),
                     new[] { 1, 0, 2 }.ToImmutableList()
                 );
 
             yield return
                 new NormalSearchPhrase(
                     new PhraseComponent[]{
-                        new WordComponent(PartOfSpeech.Adjective),
+                        new WordComponent(WordType.Adjective),
                         new IndefiniteArticleAComponent(0),
-                        new WordComponent(PartOfSpeech.Noun)}.ToImmutableList(),
+                        new WordComponent(WordType.Noun)}.ToImmutableList(),
                     new[] { 1, 0, 2 }.ToImmutableList()
                     );
 
             yield return
                 new NormalSearchPhrase(
                     new PhraseComponent[]{
-                        new WordComponent(PartOfSpeech.Adjective),
-                        new FixedStringComponent(new Word("The","A word placed before nouns to limit or individualize their meaning.", PartOfSpeech.Other )),
-                        new WordComponent(PartOfSpeech.Noun)}.ToImmutableList(),
+                        new WordComponent(WordType.Adjective),
+                        new FixedStringComponent(new Word("The","A word placed before nouns to limit or individualize their meaning.", WordType.Other )),
+                        new WordComponent(WordType.Noun)}.ToImmutableList(),
                     new[] { 1, 0, 2 }.ToImmutableList()
                     );
 
             yield return
                 new NormalSearchPhrase(
                     new PhraseComponent[]{
-                        new WordComponent(PartOfSpeech.Adjective),
-                        new FixedStringComponent(new Word("One","Denoting a person or thing conceived or spoken of indefinitely.", PartOfSpeech.Other )),
-                        new WordComponent(PartOfSpeech.Noun)}.ToImmutableList(),
+                        new WordComponent(WordType.Adjective),
+                        new FixedStringComponent(new Word("One","Denoting a person or thing conceived or spoken of indefinitely.", WordType.Other )),
+                        new WordComponent(WordType.Noun)}.ToImmutableList(),
                     new[] { 1, 0, 2 }.ToImmutableList()
                     );
 
             yield return new NormalSearchPhrase(
-                new PhraseComponent[] { new WordComponent(PartOfSpeech.Adverb), new WordComponent(PartOfSpeech.Verb) }.ToImmutableList(),
+                new PhraseComponent[] { new WordComponent(WordType.Adverb), new WordComponent(WordType.Verb) }.ToImmutableList(),
                 new List<int>() { 1, 0 }.ToImmutableList());
 
 
             yield return new NormalSearchPhrase(
-                new PhraseComponent[] { new WordComponent(PartOfSpeech.Adverb), 
-                    new FixedStringComponent(new Word("I","The word with which a speaker or writer denotes themself.", PartOfSpeech.Other )),
-                    new WordComponent(PartOfSpeech.Verb)
+                new PhraseComponent[] { new WordComponent(WordType.Adverb), 
+                    new FixedStringComponent(new Word("I","The word with which a speaker or writer denotes themself.", WordType.Other )),
+                    new WordComponent(WordType.Verb)
                 }.ToImmutableList(),
                 new List<int>()
                 {

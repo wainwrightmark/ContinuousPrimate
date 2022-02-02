@@ -10,3 +10,6 @@
 - [x] Fix issue with paging
 - [x] Include other types of phrases (e.g. articles)
 - [ ] Emoji
+- [ ] Dynamically gues the type of anagram
+- [ ] Let user choose the type of anagram
+- [ ] Keep track of phrase lengths

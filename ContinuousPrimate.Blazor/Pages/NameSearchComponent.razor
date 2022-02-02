@@ -131,25 +131,12 @@
 
     private async Task LoadWordData()
     {
-        if (_firstNames is null)
-        {
-            var names = await _httpClient.GetStringAsync("./Data/Names.txt");
-            Console.WriteLine(DateTime.Now + ": Names Loaded");
-            _firstNames = new Lazy<IEnumerable<(AnagramKey key, string name)>>(
-                names
-                    .Split('\n', StringSplitOptions.TrimEntries)
-                    .Select(name => (AnagramKey.Create(name), name)).Memoize()
-                );
-        }
-
         if (_wordDict is null)
         {
             _wordDict = await DataLoading.GetWordDict(_httpClient);
         }
     }
 
-
-    private static Lazy<IEnumerable<(AnagramKey key, string name)>>? _firstNames;
     private static Lazy<WordDict>? _wordDict;
 
     
@@ -189,6 +176,9 @@
             if (!string.IsNullOrWhiteSpace(TextValue))
                 return SearchData;
 
+            if (DatabaseWordsData is null || !DatabaseWordsData.Anagrams.Any())
+                return null;
+
             return DatabaseWordsData;
         }
     }
@@ -209,7 +199,7 @@
 
     public async Task Search()
     {
-        if (!_isSearching && _firstNames is not null && _wordDict is not null)
+        if (!_isSearching && _wordDict is not null)
         {
             HelperText = "Searching";
             _isSearching = true;
@@ -219,8 +209,7 @@
             await Task.Delay(1);
 
             var result =
-                _cache.GetOrAdd(TextValue, t => NameSearch.Search(t, 
-                    _firstNames.Value,
+                _cache.GetOrAdd(TextValue, t => NameSearch.Search(t,
                     _wordDict.Value
                     ).Memoize());
 

@@ -1,5 +1,4 @@
-﻿global using WordDict = System.Collections.Generic.IReadOnlyDictionary<ContinuousPrimate.PartOfSpeech, System.Collections.Generic.IReadOnlyDictionary<ContinuousPrimate.AnagramKey, ContinuousPrimate.Word>>;
-using System.IO.Compression;
+﻿using System.IO.Compression;
 namespace ContinuousPrimate.Blazor.Pages;
 
 public static class DataLoading
@@ -9,9 +8,9 @@ public static class DataLoading
     {
         var text = await LoadText(client, "./Data/WordData.gzip");
 
-        Console.WriteLine(DateTime.Now + ": Word Data Loaded");
+        Console.WriteLine(DateTime.Now + $": Word Data Loaded - {text.Length} characters");
 
-        var result = new Lazy<WordDict>(() => WordListHelper.CreateFullWordDictionary(text));
+        var result = new Lazy<WordDict>(() => WordDictHelper.CreateFullWordDictionary(text));
 
         return result;
     }

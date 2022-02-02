@@ -124,9 +124,81 @@ namespace ContinuousPrimate.Test {
         ///Stephen
         ///Patri [rest of string was truncated]&quot;;.
         /// </summary>
-        internal static string Names {
+        internal static string FirstNames {
             get {
-                return ResourceManager.GetString("Names", resourceCulture);
+                return ResourceManager.GetString("FirstNames", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Smith
+        ///Johnson
+        ///Williams
+        ///Brown
+        ///Jones
+        ///Garcia
+        ///Miller
+        ///Davis
+        ///Rodriguez
+        ///Martinez
+        ///Hernandez
+        ///Lopez
+        ///Gonzalez
+        ///Wilson
+        ///Anderson
+        ///Thomas
+        ///Taylor
+        ///Moore
+        ///Jackson
+        ///Martin
+        ///Lee
+        ///Perez
+        ///Thompson
+        ///White
+        ///Harris
+        ///Sanchez
+        ///Clark
+        ///Ramirez
+        ///Lewis
+        ///Robinson
+        ///Walker
+        ///Young
+        ///Allen
+        ///King
+        ///Wright
+        ///Scott
+        ///Torres
+        ///Nguyen
+        ///Hill
+        ///Flores
+        ///Green
+        ///Adams
+        ///Nelson
+        ///Baker
+        ///Hall
+        ///Rivera
+        ///Campbell
+        ///Mitchell
+        ///Carter
+        ///Roberts
+        ///Gomez
+        ///Phillips
+        ///Evans
+        ///Turner
+        ///Diaz
+        ///Parker
+        ///Cruz
+        ///Edwards
+        ///Collins
+        ///Reyes
+        ///Stewart
+        ///Morris
+        ///Morales
+        ///Murphy        /// [rest of string was truncated]&quot;;.
+        /// </summary>
+        internal static string LastNames {
+            get {
+                return ResourceManager.GetString("LastNames", resourceCulture);
             }
         }
     }

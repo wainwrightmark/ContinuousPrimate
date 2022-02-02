@@ -1,10 +1,13 @@
 ﻿namespace ContinuousPrimate;
 
-public enum PartOfSpeech
+public enum WordType
 {
     Noun,//n
     Adjective,//j
     Verb,//v
     Adverb,//a
-    Other //o
+    Other, //o
+
+    FirstName, //f
+    LastName //l
 }
