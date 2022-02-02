@@ -4,21 +4,8 @@
 public record WordDict(IReadOnlyDictionary<WordType, WordDict.Table> Tables)
 {
     public record Table(IReadOnlyList<(AnagramKey Key, Word Word)> List, ILookup<AnagramKey, Word> Lookup);
-}
 
-
-
-public static class WordDictHelper
-{
-    public static Lazy<IEnumerable<(AnagramKey key, string name)>> CreateEnumerable(string data)
-    {
-        return new Lazy<IEnumerable<(AnagramKey key, string name)>>(()=>data
-            .Split('\n', StringSplitOptions.TrimEntries)
-            .Select(name => (AnagramKey.Create(name), name)).Memoize()
-        ) ;
-    }
-
-    public static WordDict CreateFullWordDictionary(string data)
+    public static WordDict Create(string data)
     {
         var sw = Stopwatch.StartNew();
 
@@ -66,3 +53,4 @@ public static class WordDictHelper
         return WordType.Other;
     }
 }
+

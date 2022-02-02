@@ -10,7 +10,7 @@ public static class DataLoading
 
         Console.WriteLine(DateTime.Now + $": Word Data Loaded - {text.Length} characters");
 
-        var result = new Lazy<WordDict>(() => WordDictHelper.CreateFullWordDictionary(text));
+        var result = new Lazy<WordDict>(() => WordDict.Create(text));
 
         return result;
     }

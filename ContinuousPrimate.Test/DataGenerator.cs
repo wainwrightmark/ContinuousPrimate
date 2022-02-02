@@ -4,6 +4,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Text.RegularExpressions;
+using MoreLinq.Experimental;
 using WordNet;
 using Xunit;
 using Xunit.Abstractions;
@@ -25,8 +26,16 @@ public class DataGenerator
         return string.Join("\n", GetFullWordDictLines());
     }
 
-    private static readonly Lazy<IEnumerable<(AnagramKey key, string name)>> FirstNames = WordDictHelper.CreateEnumerable(Words.FirstNames);
-    private static readonly Lazy<IEnumerable<(AnagramKey key, string name)>> LastNames = WordDictHelper.CreateEnumerable(Words.LastNames);
+    public static Lazy<IEnumerable<(AnagramKey key, string name)>> CreateEnumerable(string data)
+    {
+        return new Lazy<IEnumerable<(AnagramKey key, string name)>>(()=>data
+            .Split('\n', StringSplitOptions.TrimEntries)
+            .Select(name => (AnagramKey.Create(name), name)).Memoize()
+        ) ;
+    }
+
+    private static readonly Lazy<IEnumerable<(AnagramKey key, string name)>> FirstNames = CreateEnumerable(Words.FirstNames);
+    private static readonly Lazy<IEnumerable<(AnagramKey key, string name)>> LastNames = CreateEnumerable(Words.LastNames);
 
     public static IEnumerable<string> GetFullWordDictLines()
     {

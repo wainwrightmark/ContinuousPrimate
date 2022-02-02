@@ -18,8 +18,7 @@ public class IntegrationTests
     public ITestOutputHelper TestOutputHelper { get; }
 
     private static readonly Lazy<WordDict> FullWordDict =
-        new(()=>
-            WordDictHelper.CreateFullWordDictionary(DataGenerator.GetFullWordDictText())
+        new(()=> WordDict.Create(DataGenerator.GetFullWordDictText())
             );
 
     [Theory]
