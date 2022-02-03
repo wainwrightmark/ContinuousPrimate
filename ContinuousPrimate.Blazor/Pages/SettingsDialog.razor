@@ -1,0 +1,54 @@
+﻿<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            Settings
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        
+        
+        <MudSelect T="SearchType" @bind-value="SearchType" Strict="true" Label="Search For" HelperText="The type of thing to search for" > 
+            <MudSelectItem Value="@SearchType.Dynamic"> <MudIcon Icon="@Icons.Filled.AutoAwesome"/> Dynamic</MudSelectItem>
+            <MudSelectItem Value="@SearchType.Name"> <MudIcon Icon="@Icons.Filled.Person"/> Name</MudSelectItem>
+            <MudSelectItem Value="@SearchType.Phrase"> <MudIcon Icon="@Icons.Filled.EmojiObjects"/> Phrase</MudSelectItem>
+        </MudSelect>
+        
+        <MudSelect T="WordType"
+                   @bind-Value="OtherWordType"
+                   Strict="true"
+                   Label="@(SearchType == SearchType.Dynamic ? "" : "Combine With")"
+                   HelperText="@(SearchType == SearchType.Dynamic? "" : "The type of word to combine with")"
+                   Disabled="@(SearchType == SearchType.Dynamic)"
+                   ReadOnly="@(SearchType == SearchType.Dynamic)">
+
+            @foreach (var item in Enum.GetValues<WordType>())
+            {
+                @if (@item == WordType.Other)
+                {
+                    <MudSelectItem Value="@item"><MudElement></MudElement></MudSelectItem>
+                }
+                else
+                {
+                    <MudSelectItem Value="@item">@item</MudSelectItem>
+                }
+            }
+        </MudSelect>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Variant="Variant.Filled" OnClick="Submit">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    
+    [Parameter]
+    public SearchType SearchType { get; set; } = SearchType.Dynamic;
+
+    [Parameter]
+    public WordType OtherWordType { get; set; } = WordType.Other;
+
+    
+    void Submit() => MudDialog.Close(DialogResult.Ok((SearchType, OtherWordType)));
+    void Cancel() => MudDialog.Cancel();
+}

@@ -1,10 +1,14 @@
 ﻿@using System.Collections.Concurrent
 @inject HttpClient _httpClient;
 @inject Blazored.LocalStorage.ILocalStorageService _localStorage
+@inject IDialogService DialogService
+
+
+
 
 <MudContainer MaxWidth="MaxWidth.Small" Style="padding-left: 0; padding-right: 0;">
     
-    <MudButtonGroup>
+    <MudToolBar>
         <MudTextField
             @ref="_searchField"
             @bind-Value="TextValue"
@@ -12,31 +16,21 @@
             HelperText="@HelperText"
             Variant="Variant.Text"
             Clearable="true" Disabled="@_isSearching"/>
-        <MudIconButton Icon="@SearchTypeIcon" OnClick="@ToggleSearchType" Title="@SearchType.ToString()"/>
-    
         
-        <MudSelect T="WordType" 
-                   Dense="true" 
-                   @bind-Value="OtherWordType"
-                   Strict="true"
-                   Label="@(SearchType == SearchType.Dynamic? "" : "Other Word")" 
-                   Disabled="@(SearchType == SearchType.Dynamic)"
-                   ReadOnly="@(SearchType == SearchType.Dynamic)">
+        
+        <MudIconButton
+            OnClick="ShowSettings"
+            Icon="@Icons.Filled.Settings"
+            Title="Settings"
+            />
 
-            @foreach (var item in Enum.GetValues<WordType>())
-            {
-                @if (@item == WordType.Other)
-                {
-                    <MudSelectItem Value="@item"><MudElement></MudElement></MudSelectItem>
-                }
-                else
-                {
-                    <MudSelectItem Value="@item">@item</MudSelectItem>
-                }
-            }
-        </MudSelect>
+        <MudIconButton
+            Link="https://github.com/wainwrightmark/ContinuousPrimate"
+            Icon="@Icons.Custom.Brands.GitHub"
+            Title="View on Github"
+            Target="_blank"/>
 
-    </MudButtonGroup>
+    </MudToolBar>
 
     
 
@@ -111,11 +105,7 @@
 
 
     <MudToolBar>
-        <MudIconButton
-            Link="https://github.com/wainwrightmark/ContinuousPrimate"
-            Icon="@Icons.Custom.Brands.GitHub"
-            Title="View on Github"
-            Target="_blank"/>
+        
         <MudSpacer/>
         @if (MyData is not null)
         {
@@ -133,190 +123,3 @@
     </MudToolBar>
 
 </MudContainer>
-
-
-@code{
-
-    private MudTextField<string> _searchField;
-
-    /// <inheritdoc />
-    protected override async Task OnInitializedAsync()
-    {
-        await base.OnInitializedAsync();
-
-        Console.WriteLine(DateTime.Now + ": Component Initialized");
-        
-        await LoadWordData();
-        await LoadDatabaseWords();
-    }
-
-    /// <inheritdoc />
-    protected override async Task OnParametersSetAsync()
-    {
-        await base.OnParametersSetAsync();
-
-        await _searchField.FocusAsync();
-    }
-
-        private const string SavedWordsKey = "ContinuousPrimateSavedAnagrams";
-
-    private async Task LoadDatabaseWords()
-    {
-        var data = await _localStorage.GetItemAsync<List<PartialAnagram>>(SavedWordsKey) ?? new List<PartialAnagram>();
-
-        DatabaseWords.UnionWith(data);
-
-        Console.WriteLine($"{DatabaseWords.Count} Database Words Found");
-
-        DatabaseWordsData = new LoadedData(DatabaseWords);
-        StateHasChanged();
-    }
-
-    private async Task LoadWordData()
-    {
-        if (_wordDict is null)
-        {
-            _wordDict = await DataLoading.GetWordDict(_httpClient);
-        }
-    }
-
-    private static Lazy<WordDict>? _wordDict;
-
-
-    private string _textValue = "";
-
-    public string TextValue
-    {
-        get => _textValue;
-        set
-        {
-            _textValue = value.Trim();
-            Search();
-        }
-    }
-
-
-    public async Task RemoveDatabaseWord(PartialAnagram pa)
-    {
-        if (DatabaseWords.Remove(pa))
-            await _localStorage.SetItemAsync(SavedWordsKey, DatabaseWords.ToList());
-    }
-
-    public async Task AddDatabaseWord(PartialAnagram pa)
-    {
-        if (DatabaseWords.Add(pa))
-            await _localStorage.SetItemAsync(SavedWordsKey, DatabaseWords.ToList());
-    }
-
-    public readonly HashSet<PartialAnagram> DatabaseWords = new();
-
-
-    public LoadedData? MyData
-    {
-        get
-        {
-            if (_isSearching) return null;
-
-            if (!string.IsNullOrWhiteSpace(TextValue))
-                return SearchData;
-
-            if (DatabaseWordsData is null || !DatabaseWordsData.Anagrams.Any())
-                return null;
-
-            return DatabaseWordsData;
-        }
-    }
-
-    public LoadedData? DatabaseWordsData;
-
-    public LoadedData? SearchData { get; private set; }
-
-    private Task SetFavourite(bool fav, PartialAnagram anagram)
-    {
-        if (fav) return AddDatabaseWord(anagram);
-        else return RemoveDatabaseWord(anagram);
-    }
-
-    public void ToggleSearchType()
-    {
-        SearchType = SearchType switch
-        {
-            SearchType.Dynamic => SearchType.Name,
-            SearchType.Name => SearchType.Phrase,
-            SearchType.Phrase => SearchType.Dynamic,
-            _ => SearchType
-            };
-        if (SearchType == SearchType.Dynamic)
-            OtherWordType = WordType.Other;
-
-        Search();
-    }
-
-    public string SearchTypeIcon
-    {
-        get
-        {
-            return SearchType switch
-            {
-                SearchType.Dynamic => Icons.Filled.AutoAwesome,
-                SearchType.Name => Icons.Filled.Person,
-                SearchType.Phrase => Icons.Filled.EmojiObjects,
-                _ => Icons.Filled.AutoAwesome
-                };
-        }
-    }
-
-    public SearchType SearchType { get; set; } = SearchType.Dynamic;
-    private WordType _otherWordType = WordType.Other;
-
-    public WordType OtherWordType
-    {
-        get => _otherWordType;
-        set
-        {
-            if (_otherWordType != value)
-            {
-                _otherWordType = value;
-                Search();
-            }
-        }
-    }
-
-    public string HelperText = "Type your last name (or whatever)";
-
-    private bool _isSearching;
-
-    public async Task Search()
-    {
-        if (!_isSearching && _wordDict is not null)
-        {
-            HelperText = "Searching";
-            _isSearching = true;
-            SearchData = null;
-
-            StateHasChanged();
-            await Task.Delay(1);
-
-            var result =
-                _cache.GetOrAdd(
-                    (TextValue, SearchType, OtherWordType)
-                    
-                    , t => NameSearch.Search(t.text,
-                    t.searchType,
-                    t.wordType,
-            _wordDict.Value
-                    ).Memoize());
-
-            HelperText = "";
-            SearchData = new LoadedData(result);
-            _isSearching = false;
-            StateHasChanged();
-        }
-    }
-
-    private readonly ConcurrentDictionary<(string text, SearchType searchType, WordType wordType), IEnumerable<PartialAnagram>> _cache = new();
-
-
-
-
-}

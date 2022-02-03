@@ -27,7 +27,7 @@ public static class NameSearch
             WordType.Adjective => (WordType.Noun, false, SearchNode.Name),
             WordType.Verb => (WordType.Adverb, false, SearchNode.Name),
             WordType.Adverb => (WordType.Verb, true, SearchNode.Name),
-            WordType.Other => (WordType.FirstName, false, SearchNode.Phrase), //Assume this was a last name
+            WordType.Other => (WordType.FirstName, true, SearchNode.Phrase), //Assume this was a last name
             WordType.FirstName => (WordType.LastName, false, SearchNode.Phrase),
             WordType.LastName => (WordType.FirstName, true, SearchNode.Phrase),
             _ => throw new ArgumentOutOfRangeException(nameof(wordType), wordType, null)
