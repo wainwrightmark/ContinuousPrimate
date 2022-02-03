@@ -7,119 +7,104 @@
 
 
 <MudContainer MaxWidth="MaxWidth.Small" Style="padding-left: 0; padding-right: 0;">
-    
-    <MudToolBar>
-        <MudTextField
-            @ref="_searchField"
-            @bind-Value="TextValue"
-            Label="Search"
-            HelperText="@HelperText"
-            Variant="Variant.Text"
-            Clearable="true" Disabled="@_isSearching"/>
+
+    <MudTable @ref="_table" ServerData="ServerReload" Dense="true" Hover="true" FixedHeader="true" Virtualize="true"  >
+        <ToolBarContent>
+            <MudTextField
+                @ref="_searchField"
+                @bind-Value="TextValue"
+                Label="Search"
+                Variant="Variant.Text"
+                Clearable="true" Disabled="@_isSearching"/>
         
         
-        <MudIconButton
-            OnClick="ShowSettings"
-            Icon="@Icons.Filled.Settings"
-            Title="Settings"
+            <MudIconButton
+                OnClick="ShowSettings"
+                Icon="@Icons.Filled.Settings"
+                Title="Settings"
             />
 
-        <MudIconButton
-            Link="https://github.com/wainwrightmark/ContinuousPrimate"
-            Icon="@Icons.Custom.Brands.GitHub"
-            Title="View on Github"
-            Target="_blank"/>
+            <MudIconButton
+                Link="https://github.com/wainwrightmark/ContinuousPrimate"
+                Icon="@Icons.Custom.Brands.GitHub"
+                Title="View on Github"
+                Target="_blank"/>
+        </ToolBarContent>
+        <NoRecordsContent>
+            <MudText>Type your last name... or whatever!</MudText>
+        </NoRecordsContent>
+        <LoadingContent>
+            <MudText>Searching...</MudText>
+        </LoadingContent>
+        <PagerContent >
+            
+            <MudFab
+                EndIcon="@Icons.Filled.ExpandMore"
+                OnClick="IncreaseRowsPerPage"
+                Disabled="@(TotalItems <= _table.RowsPerPage)"
+            />
 
-    </MudToolBar>
-
-    
-
-    @if (MyData is not null)
-    {
-        <MudSimpleTable Hover="true" Dense="true" Striped="true">
-
-            <tbody>
-            @foreach (var row in MyData.TableElements)
-            {
-                <tr>
-                    <td>
-                        @foreach (var word in @row.OriginalTerms)
-                        {
-                            <MudTooltip Arrow="true" Text="@word.Gloss">
-                                <MudText>@word.Text </MudText>
-                            </MudTooltip>
-                            <MudElement> </MudElement>
-                        }
-
-                    </td>
-                    <td>
-                        @foreach (var word in @row.AnagramWords)
-                        {
-                            <MudTooltip Arrow="true" Text="@word.Gloss">
-                                <MudText>@word.Text </MudText>
-                            </MudTooltip>
-                            <MudElement> </MudElement>
-                        }
-                    </td>
-
-                    <td>
-
-                        <MudMenu Icon="@Icons.Filled.Menu" Dense="true" AnchorOrigin="Origin.TopLeft" TransformOrigin="Origin.TopRight">
-                            <MudMenuItem>
-                                <MudIconButton
-                                    Link="@SocialHelpers.GetFacebookShareURL(row)"
-                                    Icon="@Icons.Custom.Brands.Facebook"
-                                    Title="Share on Facebook"
-                                    Target="_blank"/>
-                            </MudMenuItem>
-
-                            <MudMenuItem>
-                                <MudIconButton
-                                    Link="@SocialHelpers.GetTwitterShareUrl(row)"
-                                    Icon="@Icons.Custom.Brands.Twitter"
-                                    Title="Share on Twitter"
-                                    Target="_blank"/>
-                            </MudMenuItem>
-
-                            <MudMenuItem>
-                                <MudToggleIconButton
-                                    Icon="@Icons.Filled.StarOutline"
-                                    ToggledIcon="@Icons.Filled.Star"
-                                    Title="Favourite"
-                                    Toggled="@DatabaseWords.Contains(row)"
-                                    ToggledChanged="b => SetFavourite(b, row)"/>
-                            </MudMenuItem>
-                        </MudMenu>
-
-                    </td>
-                </tr>
-            }
-            </tbody>
-
-        </MudSimpleTable>
-    }
-    else
-    {
-        <MudSkeleton Style="margin-top: 50px" SkeletonType="SkeletonType.Rectangle" Width="100%" Height="450px"/>
-    }
-
-
-    <MudToolBar>
+        </PagerContent>
         
-        <MudSpacer/>
-        @if (MyData is not null)
-        {
-            <MudNumericField T="int"
-                             @bind-Value="MyData.PageNumber"
-                             Min="1"
-                             FullWidth="false"
-                             Style="Width: 60px;"
-                             HideSpinButtons="true"
-                             Adornment="Adornment.End"
-                             AdornmentIcon="@Icons.Filled.NavigateNext"
-                             Disabled="@(!MyData.CanIncreasePageNumber)"
-                             OnAdornmentClick="() => MyData.PageNumber++"/>
-        }
-    </MudToolBar>
+
+        <RowTemplate>
+            <MudTd>
+                <MudText>
+                    @foreach (var word in @context.OriginalTerms)
+                    {
+                        <MudTooltip Arrow="true" Text="@word.Gloss">
+                            @(word.Text)
+                            &nbsp;
+                        </MudTooltip>
+                    }
+                </MudText>
+            </MudTd>
+            <MudTd>
+                
+                <MudText>
+                    @foreach (var word in @context.AnagramWords)
+                    {
+                        <MudTooltip Arrow="true" Text="@word.Gloss">
+                            @(word.Text)
+                            &nbsp;
+                        </MudTooltip>
+                    }
+                </MudText>
+            </MudTd>
+            <MudTd>
+                <MudMenu Icon="@Icons.Filled.Menu" Dense="true" AnchorOrigin="Origin.TopLeft" TransformOrigin="Origin.TopRight">
+                    <MudMenuItem>
+                        <MudIconButton
+                            Link="@SocialHelpers.GetFacebookShareURL(context)"
+                            Icon="@Icons.Custom.Brands.Facebook"
+                            Title="Share on Facebook"
+                            Target="_blank"/>
+                    </MudMenuItem>
+
+                    <MudMenuItem>
+                        <MudIconButton
+                            Link="@SocialHelpers.GetTwitterShareUrl(context)"
+                            Icon="@Icons.Custom.Brands.Twitter"
+                            Title="Share on Twitter"
+                            Target="_blank"/>
+                    </MudMenuItem>
+
+                    <MudMenuItem>
+                        <MudToggleIconButton
+                            Icon="@Icons.Filled.StarOutline"
+                            ToggledIcon="@Icons.Filled.Star"
+                            Title="Favourite"
+                            Toggled="@DatabaseWords.Contains(context)"
+                            ToggledChanged="@(b => SetFavourite(b, context))"/>
+                    </MudMenuItem>
+                </MudMenu>
+            </MudTd>
+
+        </RowTemplate>
+    </MudTable>
+    
+    <MudScrollToTop >
+        <MudFab Color="Color.Tertiary" Icon="@Icons.Filled.ArrowCircleUp" />
+    </MudScrollToTop>
 
 </MudContainer>

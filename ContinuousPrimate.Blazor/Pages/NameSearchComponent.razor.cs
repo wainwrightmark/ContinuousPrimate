@@ -7,6 +7,7 @@ namespace ContinuousPrimate.Blazor.Pages;
 public partial class NameSearchComponent
 {
     private MudTextField<string> _searchField;
+    private MudTable<PartialAnagram> _table;
 
     /// <inheritdoc />
     protected override async Task OnInitializedAsync()
@@ -36,9 +37,7 @@ public partial class NameSearchComponent
         DatabaseWords.UnionWith(data);
 
         Console.WriteLine($"{DatabaseWords.Count} Database Words Found");
-
-        DatabaseWordsData = new LoadedData(DatabaseWords);
-        StateHasChanged();
+        _table.ReloadServerData();
     }
 
     private async Task LoadWordData()
@@ -60,7 +59,8 @@ public partial class NameSearchComponent
         set
         {
             _textValue = value.Trim();
-            Search();
+            ResetRowsPerPage();
+            _table.ReloadServerData();
         }
     }
 
@@ -79,27 +79,7 @@ public partial class NameSearchComponent
 
     public readonly HashSet<PartialAnagram> DatabaseWords = new();
 
-
-    public LoadedData? MyData
-    {
-        get
-        {
-            if (_isSearching) return null;
-
-            if (!string.IsNullOrWhiteSpace(TextValue))
-                return SearchData;
-
-            if (DatabaseWordsData is null || !DatabaseWordsData.Anagrams.Any())
-                return null;
-
-            return DatabaseWordsData;
-        }
-    }
-
-    public LoadedData? DatabaseWordsData;
-
-    public LoadedData? SearchData { get; private set; }
-
+    
     private Task SetFavourite(bool fav, PartialAnagram anagram)
     {
         if (fav) return AddDatabaseWord(anagram);
@@ -110,36 +90,18 @@ public partial class NameSearchComponent
 
     public WordType OtherWordType { get; set; } = WordType.Other;
 
-    public string HelperText = "Type your last name (or whatever)";
-
-    private bool _isSearching;
-
-    public async Task Search()
+    public void ResetRowsPerPage()
     {
-        if (!_isSearching && _wordDict is not null)
-        {
-            HelperText = "Searching";
-            _isSearching = true;
-            SearchData = null;
-
-            StateHasChanged();
-            await Task.Delay(1);
-
-            var result =
-                _cache.GetOrAdd(
-                    (TextValue, SearchType, OtherWordType)
-                    , t => NameSearch.Search(t.text,
-                        t.searchType,
-                        t.wordType,
-                        _wordDict.Value
-                    ).Memoize());
-
-            HelperText = "";
-            SearchData = new LoadedData(result);
-            _isSearching = false;
-            StateHasChanged();
-        }
+        _table.SetRowsPerPage(10);
     }
+
+    public void IncreaseRowsPerPage()
+    {
+        _table.SetRowsPerPage(_table.RowsPerPage + 5);
+    }
+    
+    private bool _isSearching;
+    
 
     public async Task ShowSettings()
     {
@@ -161,10 +123,57 @@ public partial class NameSearchComponent
 
             SearchType = resultData.searchType;
             OtherWordType = resultData.wordType;
-
-            Search();
         }
     }
+
+    private int TotalItems { get; set; } = 0;
+
+    private async Task<TableData<PartialAnagram>> ServerReload(TableState state)
+    {
+        if (string.IsNullOrWhiteSpace(TextValue) || _wordDict is null)
+        {
+            TotalItems = DatabaseWords.Count;
+            return new TableData<PartialAnagram>()
+            {
+                Items = DatabaseWords.Skip(state.Page * state.PageSize).Take(state.PageSize).ToArray(),
+                TotalItems = DatabaseWords.Count
+            };
+        }
+
+        _isSearching = true;
+
+        StateHasChanged();
+        await Task.Delay(1);
+
+        var result =
+            _cache.GetOrAdd(
+                (TextValue, SearchType, OtherWordType)
+                , t => NameSearch.Search(t.text,
+                    t.searchType,
+                    t.wordType,
+                    _wordDict.Value
+                ).Memoize());
+        
+        _isSearching = false;
+
+        var items = result
+            .Skip(state.Page * state.PageSize)
+            .Take(state.PageSize)
+            .ToArray();
+
+        int totalItems;
+        if (items.Length == state.PageSize)
+            totalItems = (state.Page + 2) * state.PageSize;
+        else
+            totalItems = (state.Page * state.PageSize) + items.Length;
+        TotalItems = totalItems;
+        return new TableData<PartialAnagram>()
+        {
+            Items = items,
+            TotalItems = totalItems
+        };
+    }
+
 
     private readonly
         ConcurrentDictionary<(string text, SearchType searchType, WordType wordType), IEnumerable<PartialAnagram>>
