@@ -35,7 +35,7 @@ public record WordDict(IReadOnlyDictionary<WordType, WordDict.Table> Tables)
 
             var pos = GetPartOfSpeech(terms[0]);
             var word = terms[1];
-            var key = new AnagramKey(terms[2]);
+            var key = AnagramKey.CreateCareful(terms[2]);
             var gloss = terms.Length > 3? terms[3] : "";
 
             return (key, new Word(word, gloss, pos));

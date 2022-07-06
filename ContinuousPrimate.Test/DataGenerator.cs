@@ -58,20 +58,20 @@ public class DataGenerator
 
             if (gloss is not null)
             {
-                yield return $"{GetAbbreviation(grouping.Key.PartOfSpeech)}\t{grouping.Key.word}\t{key.Text}\t{gloss}";
+                yield return $"{GetAbbreviation(grouping.Key.PartOfSpeech)}\t{grouping.Key.word}\t{key.GetText()}\t{gloss}";
             }
         }
 
         foreach (var lastName in lastNames)
         {
             var key = AnagramKey.CreateCareful(lastName);
-            yield return $"l\t{lastName}\t{key.Text}\t";
+            yield return $"l\t{lastName}\t{key.GetText()}\t";
         }
 
         foreach (var firstName in firstNames)
         {
             var key = AnagramKey.CreateCareful(firstName);
-            yield return $"f\t{firstName}\t{key.Text}\t";
+            yield return $"f\t{firstName}\t{key.GetText()}\t";
         }
 
         static string GetAbbreviation(PartOfSpeech pos)
@@ -112,7 +112,7 @@ public class DataGenerator
 
         using var file =
             File.OpenWrite(
-                @"C:\Users\wainw\source\repos\MarkPersonal\ContinuousPrimate1\ContinuousPrimate.Blazor\wwwroot\Data\WordData.gzip");
+                @"C:\Source\MarkPersonal\ContinuousPrimate\ContinuousPrimate.Blazor\wwwroot\Data\WordData.gzip");
         using var gZipStream = new GZipStream(file, CompressionMode.Compress);
         using (var writer = new StreamWriter(gZipStream))
         {

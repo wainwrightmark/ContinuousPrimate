@@ -105,7 +105,7 @@ public record FixedStringComponent(AnagramKey Key, Word Word) : PhraseComponent
         }
         else
         {
-            if (remainingKey.Text.Length > Key.Text.Length)
+            if (remainingKey.Length > Key.Length)
             {
                 var sub = remainingKey.TrySubtract(Key);
                 if (sub is not null)
@@ -137,7 +137,7 @@ public record WordComponent(WordType WordType) : PhraseComponent
         }
         else
         {
-            if (remainingKey.Text.Length > 3) //Ignore words shorter than three letters
+            if (remainingKey.Length > 3) //Ignore words shorter than three letters
             {
                 //This is the slow bit
                 foreach (var (anagramKey, word) in wordDict.Tables[WordType].List)

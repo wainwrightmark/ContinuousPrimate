@@ -23,7 +23,7 @@ public class AnagramKeyTests
             .Select(AnagramKey.Create)
             .Aggregate((a,b)=>a.Add(b));
 
-        actual.Text.Should().Be(expected);
+        actual.GetText().Should().Be(expected);
     }
 
     [Theory]
@@ -36,6 +36,6 @@ public class AnagramKeyTests
 
         var actual = key1.TrySubtract(key2);
 
-        actual?.Text.Should().Be(expected);
+        actual?.GetText().Should().Be(expected);
     }
 }
