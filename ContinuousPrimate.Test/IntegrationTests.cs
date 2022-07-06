@@ -21,6 +21,18 @@ public class IntegrationTests
         new(()=> WordDict.Create(DataGenerator.GetFullWordDictText())
             );
 
+    [Fact]
+    public void TestMaxValue()
+    {
+        var biggest = 
+        FullWordDict.Value.Tables.Values.SelectMany(x => x.List)
+            .MaxBy(x=>x.Key.BigInt);
+
+        biggest.Word.Text.Should().Be("dichlorodiphenyltrichloroethane");
+        biggest.Key.BigInt.ToString().Should().Be("112649408922958982918604455983568280");
+    }
+
+
     [Theory]
     [InlineData("Wainwright", "wily nightwalker") ]
     [InlineData("Angela Curran", "A nuclear gran") ]
