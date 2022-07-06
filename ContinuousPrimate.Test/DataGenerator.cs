@@ -26,23 +26,23 @@ public class DataGenerator
         return string.Join("\n", GetFullWordDictLines());
     }
 
-    public static Lazy<IEnumerable<(AnagramKey key, string name)>> CreateEnumerable(string data)
+    public static IEnumerable<(AnagramKey key, string name)> CreateEnumerable(string data)
     {
-        return new Lazy<IEnumerable<(AnagramKey key, string name)>>(()=>data
+        return data
             .Split('\n', StringSplitOptions.TrimEntries)
             .Select(name => (AnagramKey.Create(name), name)).Memoize()
-        ) ;
+        ;
     }
 
-    private static readonly Lazy<IEnumerable<(AnagramKey key, string name)>> FirstNames = CreateEnumerable(Words.FirstNames);
-    private static readonly Lazy<IEnumerable<(AnagramKey key, string name)>> LastNames = CreateEnumerable(Words.LastNames);
+    private static readonly IEnumerable<(AnagramKey key, string name)> FirstNames = CreateEnumerable(Words.FirstNames).Take(4000); //First names after 4000 are trash
+    private static readonly IEnumerable<(AnagramKey key, string name)> LastNames = CreateEnumerable(Words.LastNames);
 
     public static IEnumerable<string> GetFullWordDictLines()
     {
         var wordNetEngine = new WordNetEngine();
 
-        var firstNames = FirstNames.Value.Select(x => x.name).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        var lastNames = LastNames.Value.Select(x => x.name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var firstNames = FirstNames.Select(x => x.name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var lastNames = LastNames.Select(x => x.name).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         var words = wordNetEngine.GetAllSynSets()
             //.Where(x => x.PartOfSpeech == partOfSpeech)
